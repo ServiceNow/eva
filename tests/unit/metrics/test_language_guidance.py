@@ -1,0 +1,205 @@
+"""Tests for per-language judge guidance injection."""
+
+import hashlib
+import json
+import os
+import string
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+import yaml
+
+from eva.metrics import language_guidance
+from eva.metrics.base import BaseMetric
+from eva.metrics.experience.conciseness import ConcisenessJudgeMetric
+from eva.metrics.language_guidance import (
+    DISPLAY_NAMES_BY_CODE,
+    GUIDANCE_DIR,
+    get_language_guidance_text,
+    render_language_guidance,
+)
+from eva.metrics.versioning import _CURRENT_PROMPT_HASH
+from eva.models.config import base_language
+from eva.utils.prompt_manager import get_prompt_manager
+
+from .conftest import make_judge_metric, make_metric_context
+
+# Scores the simulated user against its own instructions, so it has no guidance slot.
+JUDGES_WITHOUT_GUIDANCE = {"user_behavioral_fidelity"}
+
+GOLDEN_EN_PATH = Path(__file__).resolve().parents[3] / "tests" / "fixtures" / "judge_prompts_en.json"
+REGEN_GOLDEN_ENV = "EVA_REGEN_JUDGE_PROMPT_GOLDEN"
+
+
+@pytest.fixture
+def guidance_dir(tmp_path, monkeypatch):
+    (tmp_path / "some_metric.yaml").write_text(
+        yaml.safe_dump({"fr": "French note.", "fr-CA": "Quebec note.", "de": "  "}), encoding="utf-8"
+    )
+    monkeypatch.setattr(language_guidance, "GUIDANCE_DIR", tmp_path)
+    language_guidance._load_metric_guidance.cache_clear()
+    yield tmp_path
+    language_guidance._load_metric_guidance.cache_clear()
+
+
+def test_english_and_missing_metric_render_empty(guidance_dir):
+    assert render_language_guidance("some_metric", "en") == ""
+    assert render_language_guidance("unknown_metric", "fr") == ""
+    assert render_language_guidance("some_metric", "de") == ""
+
+
+def test_regional_variant_gets_base_then_own_guidance(guidance_dir):
+    assert get_language_guidance_text("some_metric", "fr") == "French note."
+    assert get_language_guidance_text("some_metric", "fr-CA") == "French note.\n\nQuebec note."
+
+
+def test_rendered_block_has_header(guidance_dir):
+    assert render_language_guidance("some_metric", "fr") == "\n### European French-specific guidance\nFrench note.\n"
+
+
+@pytest.mark.parametrize(
+    "content, error",
+    [
+        ("- one bullet\n- another bullet\n", "expected a mapping"),
+        ("fr:\n  - one bullet\n", "must be a string"),
+    ],
+)
+def test_malformed_guidance_file_raises(guidance_dir, content, error):
+    (guidance_dir / "bad_metric.yaml").write_text(content, encoding="utf-8")
+    with pytest.raises(ValueError, match=error):
+        get_language_guidance_text("bad_metric", "fr")
+
+
+def _judge_templates() -> list[tuple[str, str, str]]:
+    judge = get_prompt_manager().prompts["judge"]
+    return [
+        (metric, key, template)
+        for metric, prompts in judge.items()
+        if isinstance(prompts, dict)
+        for key, template in prompts.items()
+        if isinstance(template, str)
+    ]
+
+
+def test_every_judge_template_has_guidance_slot():
+    for metric, key, template in _judge_templates():
+        if metric in JUDGES_WITHOUT_GUIDANCE:
+            assert "{language_guidance}" not in template, f"judge.{metric}.{key} should not have a guidance slot"
+        else:
+            assert "{language_guidance}" in template, f"judge.{metric}.{key} lacks {{language_guidance}}"
+
+
+def test_every_guidance_file_is_valid():
+    judge = get_prompt_manager().prompts["judge"]
+    known_languages = {code for code in DISPLAY_NAMES_BY_CODE if base_language(code) != "en"}
+    for path in GUIDANCE_DIR.glob("*.yaml"):
+        metric = path.stem
+        assert metric in judge, f"{path.name} has no judge prompt"
+        assert metric not in JUDGES_WITHOUT_GUIDANCE, f"{metric} prompt has no guidance slot"
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        assert isinstance(data, dict), f"{path.name} must be a mapping of language code to text"
+        for lang, text in data.items():
+            assert lang in known_languages, f"{path.name}: {lang!r} is not a supported non-English language code"
+            assert isinstance(text, str), f"{path.name}: guidance for {lang!r} must be a string"
+            assert "{" not in text and "}" not in text, f"{path.name}: braces are not allowed in guidance text"
+
+
+def test_get_judge_prompt_injects_guidance_and_changes_hash(tmp_path, monkeypatch):
+    metric = make_judge_metric(ConcisenessJudgeMetric)
+    (tmp_path / f"{metric.name}.yaml").write_text(yaml.safe_dump({"fr": "French note."}), encoding="utf-8")
+    monkeypatch.setattr(language_guidance, "GUIDANCE_DIR", tmp_path)
+    language_guidance._load_metric_guidance.cache_clear()
+    try:
+        english = metric.get_judge_prompt(language="en", conversation_turns="<turns>")
+        english_hash = _CURRENT_PROMPT_HASH.get()
+        french = metric.get_judge_prompt(language="fr", conversation_turns="<turns>")
+        french_hash = _CURRENT_PROMPT_HASH.get()
+    finally:
+        language_guidance._load_metric_guidance.cache_clear()
+
+    assert "### European French-specific guidance\nFrench note.\n" in french
+    assert "specific guidance" not in english
+    assert french_hash != english_hash
+
+
+def _render_english_judge_prompts() -> dict[str, str]:
+    """Render every judge template in English with placeholder values, keyed by ``metric.prompt_key``."""
+    prompt_manager = get_prompt_manager()
+    hashes = {}
+    for metric, key, template in _judge_templates():
+        fields = {name for _, name, _, _ in string.Formatter().parse(template) if name}
+        variables = {name: f"<{name}>" for name in fields - {"language_guidance"}}
+        stub = SimpleNamespace(name=metric, prompt_manager=prompt_manager)
+        rendered = BaseMetric.get_judge_prompt(stub, key, language="en", **variables)
+        hashes[f"{metric}.{key}"] = hashlib.sha256(rendered.encode("utf-8")).hexdigest()[:12]
+    return hashes
+
+
+def test_english_judge_prompts_match_golden():
+    """English judge prompts are byte-identical to the golden renders.
+
+    An intended change to an English prompt must update the golden file:
+    ``EVA_REGEN_JUDGE_PROMPT_GOLDEN=1 uv run pytest tests/unit/metrics/test_language_guidance.py``.
+    """
+    current = _render_english_judge_prompts()
+    if os.environ.get(REGEN_GOLDEN_ENV):
+        GOLDEN_EN_PATH.write_text(json.dumps(current, indent=2, sort_keys=True) + "\n")
+    golden = json.loads(GOLDEN_EN_PATH.read_text())
+    assert current == golden, f"English judge prompts changed. If intended, regenerate with {REGEN_GOLDEN_ENV}=1."
+
+
+# The three speech-fidelity judges share their per-language facts; only the rating wording in
+# the group headings and a few rating-specific items differ. These groups must list the same items.
+SPEECH_FIDELITY_JUDGES = ("agent_speech_fidelity", "tts_fidelity", "user_speech_fidelity")
+SHARED_SPEECH_GROUPS = (
+    "**Correct",
+    "**English letter or digit names",
+    "**Unusual but understandable",
+    "**Letters and digits that sound alike",
+    "**Same sound",
+)
+
+
+def _shared_speech_groups(text: str) -> dict[str, list[str]]:
+    groups, current = {}, None
+    for line in text.splitlines():
+        if line.startswith("**"):
+            current = next((prefix for prefix in SHARED_SPEECH_GROUPS if line.startswith(prefix)), None)
+            if current:
+                groups[current] = []
+        elif current and line.startswith("- "):
+            groups[current].append(line)
+    return groups
+
+
+def test_speech_fidelity_guidance_files_list_the_same_items():
+    files = {
+        metric: yaml.safe_load((GUIDANCE_DIR / f"{metric}.yaml").read_text(encoding="utf-8"))
+        for metric in SPEECH_FIDELITY_JUDGES
+    }
+    reference, *others = SPEECH_FIDELITY_JUDGES
+    for metric in others:
+        assert files[metric].keys() == files[reference].keys(), f"{metric} and {reference} cover different languages"
+        for lang, text in files[reference].items():
+            assert _shared_speech_groups(files[metric][lang]) == _shared_speech_groups(text), (
+                f"{metric} and {reference} list different items for {lang!r}"
+            )
+
+
+@pytest.mark.parametrize(("gender", "expected"), [("F", "female"), ("M", "male"), (None, "none"), ("X", "none")])
+def test_gender_word(gender, expected):
+    from eva.models.config import gender_word
+
+    assert gender_word(gender) == expected
+
+
+def test_faithfulness_and_user_behavioral_fidelity_pass_speaking_genders():
+    from eva.metrics.accuracy.faithfulness import FaithfulnessJudgeMetric
+
+    metric = make_judge_metric(FaithfulnessJudgeMetric)
+    assert metric.get_prompt_variables(make_metric_context(assistant_gender="F"), "<t>")["assistant_gender"] == "female"
+    assert metric.get_prompt_variables(make_metric_context(), "<t>")["assistant_gender"] == "none"
+    templates = {f"{m}.{k}": tpl for m, k, tpl in _judge_templates()}
+    assert "{assistant_gender}" in templates["faithfulness.user_prompt"]
+    assert "{user_gender}" in templates["user_behavioral_fidelity.user_prompt"]

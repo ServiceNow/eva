@@ -32,7 +32,7 @@ from eva.assistant.pipeline.observers import FrameworkLogWriter, MetricsLogWrite
 from eva.models.agents import AgentConfig
 from eva.models.config import ModelConfig
 from eva.utils import cartesia_agents
-from eva.utils.audio_utils import create_twilio_media_message, parse_twilio_media_message
+from eva.utils.audio_utils import create_twilio_media_message, parse_twilio_media_message, pcm16_mix
 from eva.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -58,15 +58,6 @@ def _pad_buffer_to_walltime(buffer: bytearray, elapsed_s: float, sample_rate: in
     target_bytes = int(elapsed_s * sample_rate) * 2
     if len(buffer) < target_bytes:
         buffer.extend(b"\x00" * (target_bytes - len(buffer)))
-
-
-def _mix_pcm16(track_a: bytes | bytearray, track_b: bytes | bytearray) -> bytes:
-    """eva.utils.audio_utils.pcm16_mix, vectorized so teardown does not block the event loop."""
-    a = np.frombuffer(track_a, dtype="<i2").astype(np.int32)
-    b = np.frombuffer(track_b, dtype="<i2").astype(np.int32)
-    n = max(len(a), len(b))
-    mixed = np.pad(a, (0, n - len(a))) + np.pad(b, (0, n - len(b)))
-    return np.clip(mixed, -32768, 32767).astype("<i2").tobytes()
 
 
 class _SpeechSegment:
@@ -214,9 +205,9 @@ class CartesiaAssistantServer(AbstractAssistantServer):
                     pass
             self._server = None
             self._server_task = None
-        # Mix here so the base class skips its slower per-sample mix.
+        # Mix here, straight from the bytearrays, so the base class skips its own copy-and-mix.
         if self.user_audio_buffer and self.assistant_audio_buffer and not self._audio_buffer:
-            self._audio_buffer = bytearray(_mix_pcm16(self.user_audio_buffer, self.assistant_audio_buffer))
+            self._audio_buffer = bytearray(pcm16_mix(self.user_audio_buffer, self.assistant_audio_buffer))
         logger.info(f"Cartesia managed server stopped on port {self.port} (call_id={self._call_id})")
 
     def _session_create(self) -> dict:

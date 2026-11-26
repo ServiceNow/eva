@@ -21,6 +21,7 @@ from openai import AsyncOpenAI
 from eva.assistant.base_server import AbstractAssistantServer
 from eva.assistant.pipeline.observers import FrameworkLogWriter, MetricsLogWriter
 from eva.utils.audio_utils import (
+    MulawStreamUpsampler,
     create_twilio_media_message,
     mulaw_8k_to_pcm16_24k,
     parse_twilio_media_message,
@@ -127,6 +128,9 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
         self._user_speaking: bool = False
         self._bot_speaking: bool = False
         self._user_frame_count: int = 0
+        # Recording-only: the model still receives the ratecv audio below, so the
+        # benchmark input is unchanged; only the saved audio_user.wav is cleaner.
+        self._user_recording_upsampler = MulawStreamUpsampler(OPENAI_SAMPLE_RATE)
         self._delta_count: int = 0
 
         # User speech start timestamp from audio_interface (source of truth)
@@ -447,7 +451,7 @@ class OpenAIRealtimeAssistantServer(AbstractAssistantServer):
                     sync_target = len(self.user_audio_buffer)
                     sync_buffer_to_position(self.assistant_audio_buffer, sync_target)
                     synced = len(self.assistant_audio_buffer) - asst_before
-                self.user_audio_buffer.extend(pcm16_24k)
+                self.user_audio_buffer.extend(self._user_recording_upsampler.process(mulaw_bytes))
                 self._last_user_audio_mono = time.monotonic()
                 self._user_frame_count += 1
                 if self._user_frame_count % 50 == 0:

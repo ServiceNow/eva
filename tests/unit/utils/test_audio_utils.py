@@ -7,11 +7,15 @@ and Twilio WebSocket protocol message round-trips.
 import audioop
 import json
 import math
+import random
 import struct
 
+import numpy as np
 import pytest
+import soxr
 
 from eva.utils.audio_utils import (
+    MulawStreamUpsampler,
     create_twilio_media_message,
     mulaw_8k_to_pcm16_24k,
     parse_twilio_media_message,
@@ -54,6 +58,42 @@ class TestAudioConversionRoundTrip:
         assert recov_rms / orig_rms == pytest.approx(1.0, abs=0.15)
 
 
+class TestMulawStreamUpsampler:
+    @pytest.mark.parametrize("to_rate", [16000, 24000, 48000])
+    def test_every_frame_is_exactly_ratio_times_input(self, to_rate):
+        """Per-frame output length is exact so recorded tracks stay aligned."""
+        upsampler = MulawStreamUpsampler(to_rate)
+        mulaw = _generate_mulaw_tone(440, 200)
+        for i in range(0, len(mulaw), 160):
+            frame = mulaw[i : i + 160]
+            assert len(upsampler.process(frame)) == len(frame) * (to_rate // 8000) * 2
+
+    def test_preserves_signal_energy(self):
+        upsampler = MulawStreamUpsampler(24000)
+        mulaw = _generate_mulaw_tone(440, 400)
+        out = b"".join(upsampler.process(mulaw[i : i + 160]) for i in range(0, len(mulaw), 160))
+        assert _rms(out) / _rms(audioop.ulaw2lin(mulaw, 2)) == pytest.approx(1.0, abs=0.1)
+
+    def test_delay_is_only_the_lookahead(self):
+        """Output matches one-shot resampling shifted by the 4 ms look-ahead."""
+        upsampler = MulawStreamUpsampler(24000)
+        mulaw = _generate_mulaw_tone(440, 400)
+        out = np.frombuffer(
+            b"".join(upsampler.process(mulaw[i : i + 160]) for i in range(0, len(mulaw), 160)), dtype=np.int16
+        )
+        pcm = np.frombuffer(audioop.ulaw2lin(mulaw, 2), dtype=np.int16)
+        ref = soxr.resample(pcm, 8000, 24000, quality="HQ")
+        delay = MulawStreamUpsampler._LOOKAHEAD_SAMPLES * 3
+        a, b = out[delay:].astype(float), ref[: len(out) - delay].astype(float)
+        # Skip the edges, where the one-shot reference has its own filter ramp.
+        err = np.sqrt(np.mean((a[500:-500] - b[500:-500]) ** 2))
+        assert err < 0.01 * _rms(pcm.tobytes())
+
+    def test_rejects_non_integer_ratio(self):
+        with pytest.raises(ValueError):
+            MulawStreamUpsampler(44100)
+
+
 class TestPcm16Mix:
     def test_adds_samples_and_clips_at_int16_boundaries(self):
         """Sample-wise addition with clipping; shorter track is zero-padded."""
@@ -69,6 +109,23 @@ class TestPcm16Mix:
         mixed = pcm16_mix(short_track, long_track)
         result = struct.unpack("<2h", mixed)
         assert result == (5100, 200)
+
+    def test_matches_per_sample_reference_on_random_unequal_tracks(self):
+        """The vectorized mix must equal a plain per-sample mix, for bytes and bytearray inputs."""
+
+        def reference(x: bytes, y: bytes) -> bytes:
+            n = max(len(x), len(y)) // 2
+            x, y = x.ljust(n * 2, b"\x00"), y.ljust(n * 2, b"\x00")
+            sa, sb = struct.unpack(f"<{n}h", x), struct.unpack(f"<{n}h", y)
+            return struct.pack(f"<{n}h", *(max(-32768, min(32767, p + q)) for p, q in zip(sa, sb)))
+
+        rng = random.Random(0)
+        a = struct.pack("<1000h", *(rng.randint(-32768, 32767) for _ in range(1000)))
+        b = struct.pack("<700h", *(rng.randint(-32768, 32767) for _ in range(700)))
+        assert pcm16_mix(a, b) == reference(a, b)
+        assert pcm16_mix(b, a) == reference(b, a)
+        assert pcm16_mix(bytearray(a), bytearray(b)) == reference(a, b)
+        assert pcm16_mix(b"", b"") == b""
 
 
 class TestTwilioProtocol:

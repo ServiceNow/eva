@@ -7,6 +7,7 @@ from eva.metrics.base import ConversationTextJudgeMetric, MetricContext
 from eva.metrics.processor import is_agent_timeout_on_user_turn
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import build_binary_flag_sub_metrics
+from eva.models.config import gender_word
 from eva.models.results import MetricScore
 from eva.utils.culture import add_user_language_directive
 from eva.utils.prompt_manager import get_prompt_manager
@@ -67,11 +68,12 @@ class UserBehavioralFidelityMetric(ConversationTextJudgeMetric):
     """
 
     name = "user_behavioral_fidelity"
-    version = "v0.1"
+    version = "v0.2"
     description = "Validation metric for simulated user corruption detection"
     category = "validation"
     rating_scale = (0, 1)
-    default_model = "gpt-5.2-medium"
+    default_model = "gpt-5.2"
+    default_params = {"max_tokens": 100000, "reasoning_effort": "medium", "service_tier": "flex"}
 
     def get_prompt_variables(self, context: MetricContext, transcript_text: str) -> dict[str, Any]:
         """Return variables for prompt formatting."""
@@ -110,6 +112,7 @@ class UserBehavioralFidelityMetric(ConversationTextJudgeMetric):
             "conversation_end": conversation_end,
             "user_simulator_instructions": _render_user_simulator_instructions(context),
             "language_display_name": context.language_display_name,
+            "user_gender": gender_word(context.user_gender),
         }
 
     def build_metric_score(

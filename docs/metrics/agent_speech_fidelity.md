@@ -17,7 +17,7 @@ To keep the EVA score **apples-to-apples across all pipeline setups**, the same 
 ### Evaluation Method
 
 - **Type**: Audio Judge (multimodal LLM with audio input)
-- **Model**: Gemini 3 Flash
+- **Model**: Gemini 3.8 Flash
 - **Granularity**: Per-turn (each assistant turn evaluated independently)
 
 ### Input Data
@@ -71,4 +71,4 @@ The judge receives the agent audio plus a redacted conversation trace and, for e
 - **Class**: `SpeechFidelityMetric`
 - **Base Class**: `SpeechFidelityBaseMetric` → `AudioJudgeMetric`
 - **Prompt**: `configs/prompts/judge.yaml` under `judge.agent_speech_fidelity`
-- **Configuration**: `audio_judge_model` (default: Gemini 3 Flash), `aggregation` (default: "mean")
+- **Configuration**: `audio_judge_model` (default: Gemini 3.8 Flash), `aggregation` (default: "mean")

@@ -11,6 +11,7 @@ from eva.metrics.pipeline_prompts import (
 )
 from eva.metrics.registry import register_metric
 from eva.metrics.utils import build_binary_flag_sub_metrics
+from eva.models.config import gender_word
 from eva.models.results import MetricScore
 
 _FAITHFULNESS_DIMENSION_KEYS = (
@@ -19,6 +20,7 @@ _FAITHFULNESS_DIMENSION_KEYS = (
     "violating_policies",
     "failing_to_disambiguate",
     "hallucination",
+    "wrong_language",
 )
 
 # --- Pipeline-specific prompt text for faithfulness evaluation ---
@@ -52,13 +54,13 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
     """
 
     name = "faithfulness"
-    version = "v0.3"
+    version = "v0.4"
     description = (
         "LLM judge evaluation of whether the assistant remains faithful to information, policies, and instructions"
     )
     category = "accuracy"
-    default_model = "us.anthropic.claude-opus-4-6-v1"
-    default_params = {"max_tokens": 100000}  # Drop the OpenAI-only flex tier inherited from TextJudgeMetric.
+    default_model = "gpt-5.2"
+    default_params = {"max_tokens": 100000, "reasoning_effort": "medium", "service_tier": "flex"}
     rating_scale = (1, 3)
 
     def get_prompt_variables(self, context: MetricContext, transcript_text: str) -> dict[str, Any]:
@@ -78,6 +80,7 @@ class FaithfulnessJudgeMetric(ConversationTextJudgeMetric):
             "assistant_turns_disclaimer": get_assistant_turns_disclaimer(context.is_s2s),
             "misrepresentation_pipeline_note": get_misrepresentation_pipeline_note(context.is_s2s),
             "disambiguation_context": disambiguation_context,
+            "assistant_gender": gender_word(context.assistant_gender),
         }
 
     def build_metric_score(

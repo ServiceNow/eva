@@ -25,6 +25,13 @@ Performs all one-time setup needed to run the benchmark in a new language:
      ``EVA_<LANG>_USER_*`` stubs and registers the display name in
      ``LANGUAGE_DISPLAY_NAMES``.
 
+  5. **Judge language guidance** — adds a ``<lang>`` entry to each file in
+     ``configs/prompts/judge_language_guidance/``. Headings and rating rules come
+     from fixed templates; the LLM returns only a language profile (letter names,
+     confusable pairs, loanwords, gendered self-reference forms), sampled several
+     times and merged by majority vote. Metrics where the language needs no
+     guidance get no entry.
+
 All steps are idempotent: existing entries are skipped.
 
 Name source (one of):
@@ -49,7 +56,7 @@ Key arguments:
                         ``color``). Useful for languages with significant dialect
                         orthography divergence. English ships one by default; most
                         other languages don't need it.
-  --llm-model           Override the LLM used for generation (default: gpt-5.5).
+  --llm-model           Override the LLM used for generation (default: gpt-6.1-sol).
   --record-id           Mutate only a single record — useful for spot-checking a diff.
   --dry-run             Print what would be written without touching any files.
 
@@ -82,6 +89,7 @@ import yaml
 from dotenv import load_dotenv
 from pydantic import ValidationError
 
+from eva.models.config import base_language
 from eva.utils.culture import FIRST_NAME_PLACEHOLDER, LAST_NAME_PLACEHOLDER
 from eva.utils.json_utils import extract_and_load_json
 from eva.utils.llm_client import LLMClient
@@ -104,8 +112,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data"
 INITIAL_MESSAGES_PATH = REPO_ROOT / "configs" / "agents" / "initial_messages.yaml"
 WER_CONFIGS_DIR = REPO_ROOT / "src" / "eva" / "utils" / "wer_normalization" / "configs"
+GUIDANCE_DIR = REPO_ROOT / "configs" / "prompts" / "judge_language_guidance"
 
-DEFAULT_MODEL = "gpt-5.5-2026-04-23"
+DEFAULT_MODEL = "gpt-6.1-sol"
 TRANSLATION_BATCH = 25
 ALIAS_BATCH = 50  # Max unique names per alias-translation LLM call.
 
@@ -641,7 +650,7 @@ def _all_airline_records_have_phone(language: str, record_id: str | None) -> boo
 
 
 async def amain(args: argparse.Namespace) -> int:
-    llm = LLMClient(model=args.llm_model, params={"temperature": 0.0})
+    llm = LLMClient(model=args.llm_model, params={})
 
     domains = args.domains or [p.stem.removesuffix("_dataset") for p in sorted(DATA_DIR.glob("*_dataset.json"))]
 
@@ -726,6 +735,9 @@ async def amain(args: argparse.Namespace) -> int:
         args.dry_run,
         args.include_spelling_variation,
         args.overwrite_all,
+    )
+    await update_judge_language_guidance(
+        args.language, args.language_name, GUIDANCE_DIR, llm, args.dry_run, args.overwrite_all
     )
     return 0
 
@@ -1498,6 +1510,666 @@ def update_env_example(language: str, language_name: str, env_example_path: Path
 
     env_example_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     logger.info(f"Updated {env_example_path}")
+
+
+# ── Judge language guidance ─────────────────────────────────────────────────
+# Each guidance entry is rendered from fixed templates: group headings and framing sentences
+# (which carry the rating rules) are copied from the existing native-speaker-reviewed files,
+# with {L} standing for the language name. The LLM only returns a language profile (letter
+# names, confusable pairs, loanwords, gendered example forms, ...), sampled several times and
+# merged by majority vote; every metric file is rendered from that one profile.
+
+_SPEECH_FIDELITY_METRICS = ("agent_speech_fidelity", "tts_fidelity", "user_speech_fidelity")
+
+_SOUND_ALIKE = (
+    "**Letters and digits that sound alike. Decide from the audio, not from the transcript. If the audio "
+    "could be either, treat it as {severity}, like a clearly wrong letter or digit. If the audio clearly says "
+    "the intended one, it is correct, even if the transcript shows the other:**"
+)
+_SAME_SOUND = (
+    "**Same sound, cannot be told apart from audio: never lower the rating for these alone; "
+    "use {reference} to know which was meant:**"
+)
+
+_SPEECH_HEADINGS: dict[str, dict[str, str]] = {
+    "agent_speech_fidelity": {
+        "english_names": "**English letter or digit names inside a trace entity: if the entity is not said in {L}, "
+        "the rating should be 0.** Typical cases:",
+        "wrong_entity": "**Rating = 0, the entity is wrong:**",
+        "unusual": "**Unusual but understandable: rating = 1; rating = 0 only if a native {L} listener could take it for "
+        "a different value:**",
+        "sound_alike": _SOUND_ALIKE.replace("{severity}", "rating = 0"),
+        "same_sound": _SAME_SOUND.replace("{reference}", "the trace"),
+    },
+    "tts_fidelity": {
+        "english_names": "**English letter or digit names in a spelled code: rating = 0 with `wrong_language`; add "
+        "`entity_error` when the English name sounds like a different {L} letter.** Typical cases:",
+        "wrong_entity": "**Rating = 0 with `entity_error`:**",
+        "unusual": "**Unusual but understandable: not an error by itself; rating = 0 with `entity_error` only if "
+        "a native {L} listener could take it for a different value:**",
+        "sound_alike": _SOUND_ALIKE.replace("{severity}", "rating = 0 with `entity_error`"),
+        "same_sound": _SAME_SOUND.replace("{reference}", "the intended text"),
+    },
+    "user_speech_fidelity": {
+        "english_names": "**English letter or digit names in a spelled code: rating at most 2 while the value is "
+        "still clear; rating 1 (entity error) when the English name sounds like a different {L} letter.** "
+        "Typical cases:",
+        "wrong_entity": "**Rating 1 (entity error):**",
+        "unusual": "**Unusual but understandable: rating at most 2 while the value is still clear; rating 1 if a "
+        "{L} listener could take it for a different value:**",
+        "sound_alike": _SOUND_ALIKE.replace("{severity}", "rating 1 (entity error)"),
+        "same_sound": _SAME_SOUND.replace("{reference}", "the intended text"),
+        "regional_user": "**Regional usage, correct when the simulated user says it (the agent should not):**",
+    },
+}
+
+_LETTERS = [chr(c) for c in range(ord("A"), ord("Z") + 1)]
+_DIGITS = [str(d) for d in range(10)]
+
+# One LLM call per sample returns a language profile: every {L} fact stated once. All metric files are
+# rendered from it, so the judges cannot disagree about e.g. which letters are confusable. Examples in this
+# prompt come only from the reference languages (or are placeholders), so a new language is not steered
+# toward another language's answers.
+_PROFILE_PROMPT = """You are building a LANGUAGE PROFILE for {L} ({lang}). A script renders it into guidance for
+several LLM judges that score {L} voice-agent conversations (airline / IT / HR service calls where users spell
+codes, names, dates). The script supplies all headings and rating rules; you supply only {L} facts.
+
+Rules:
+- Write in English, quoting {L} forms in native script. Each list item is one short bullet, no markdown.
+- Only facts a native {L} speaker would confirm. Empty list / null / applies=false whenever nothing is needed.
+  There are NO minimum counts: [] is the expected answer for many fields.
+- Include only what a judge who does not speak {L} would otherwise get WRONG. No general facts about {L}.
+- State each fact ONCE in the profile; the script reuses it in every judge that needs it.
+- The guidance is inserted into the shared judge prompts below. Never contradict them: a form any shared
+  prompt treats as an error (or as a different value) must not be listed as correct.
+- A loanword is borrowed from another language (usually English); native vocabulary is not.
+
+Return JSON:
+{{
+ "latin_script": bool,
+ "letter_names": {{"A": .., ..., "Z": ..}},  // how {L} speakers name each Latin letter when spelling; variants " / ".
+                                         // Latin-script: pronunciation in {L} spelling ("beh"); else native script.
+ "letter_note": str|null,   // extra letters / digraphs, or which script the names are in
+ "digit_names": {{"0": .., ..., "9": ..}},
+ "number_readings": str|null, "time_readings": str|null, "date_readings": str|null,
+     // "'reading' = value" pairs, max 6, only quirks a non-native judge would misjudge; null if English-like.
+     // Check: digit order (units before tens), large-number grouping, half/quarter-hour conventions that point
+     // to the next hour, day-part words that decide AM/PM, ordinal vs cardinal day numbers, year readings.
+ "correct_other": [..],     // max 2: spelling-alphabet convention, other correct forms not covered above. (The
+                            // script itself notes letter names that are spelled like English ones.)
+ "english_name_traps": [..],// max 2: item 1 the English names as heard ('jay','six'); item 2 optional: which {L}
+                            // letter some English names sound like
+ "wrong_by_name": [{{"name": str, "said_for": str, "means": str}}],
+                            // a name / spelling word that clearly picks a DIFFERENT letter than intended:
+                            // {{"name": "<long-form name or spelling word of X>", "said_for": "Y", "means": "X"}}.
+                            // Only when two letters with the same sound each have their own distinct LETTER NAME
+                            // in {L} (so saying one name for the other letter is wrong); then one entry per
+                            // direction. Not for name-spelling merges, which have no letter names. Usually [].
+ "wrong_value": [..],       // {L} readings that state a different value, e.g. "siebenundfünfzig for 75". Usually []
+ "unusual": [..],           // max 2: non-standard but still parseable readings a {L} speaker would notice. Check
+                            // these categories: the wrong one of two number systems for the thing counted;
+                            // counting words used inside a code instead of digit names; a date / time / ID
+                            // format calqued from English; digits grouped in pairs or triples where {L} reads
+                            // them singly (or the reverse). [] if none applies.
+ "accent_notes": [..],      // max 2: widespread regional pronunciations that make one letter or digit sound like
+                            // another (consonant devoicing, merged vowels, dropped sounds), as a short clause
+                            // naming the forms, e.g. "final D devoiced, sounding like T (Rad / Rat)".
+ "confusable": [{{"forms": "M/N/L", "names": "emm/enn/ell"}}],
+                            // groups that SOUND SIMILAR (not identical) and get misheard in phone audio: letter
+                            // groups, digit/number words ("2/3" with names "zwei/drei"), letter/digit near-pairs.
+                            // "forms" = the values, "names" = the {L} spoken forms. No prose.
+ "same_sound": [{{"forms": "Q/9", "names": "キュー/きゅう", "scope": "code" | "name_spelling"}}],
+                            // forms that sound IDENTICAL in speech, so audio cannot decide: letter/digit
+                            // homophones and letters with identical names ("code"), and spellings of names that
+                            // sound the same, e.g. silent letters, merged sounds ("name_spelling": forms are
+                            // always the letters, "C/S", and names are example spellings, "Cécile / Sécile").
+                            // No prose.
+ "letter_digit_homophones": str|null, // ONLY when a letter name and a digit name are the same word, one clause:
+                            // "the letter Q (キュー) and the digit 9 (きゅう), ...". Must also appear in same_sound.
+ "names_logographic": bool, // true only if names are written in characters that cannot be heard (Japanese kanji)
+ "disambiguation_questions": [..], // 1-2 {L} questions to ask letter vs digit; [] if no homophones
+ "loanwords": [..],         // 3-5 established English loanwords normal in a {L} service call, as {L} writes them
+ "loanword_notes": [..],    // max 2: what else is NOT a language violation (script of loanwords, codes,
+                            // transcripts that render {L} speech in Latin letters). Usually []
+ "speaker_gender": null | {{"forms": str, "pairs": [[male, female], ..3-5], "not_flagged": str}},
+     // null unless {L} grammar marks the speaker's own gender in words about themselves. "forms" continues
+     // "...in any word that agrees with the speaker: ___"; "not_flagged" continues "...such as ___". lowercase.
+ "register": {{"applies": bool, "cultural_norms": [..], "not_excess_length": [..]}},
+     // applies only if polite/formal {L} service speech is much longer than English and a judge would wrongly
+     // call it filler. cultural_norms max 2 (register; set formulas quoted). not_excess_length usually [].
+ "script_mixing": {{"applies": bool, "gloss_examples": [..], "not_violation": [..]}},
+     // applies only if {L} text commonly mixes native script with Latin/English terms (false for most
+     // Latin-script European languages). gloss_examples 2-3 like "暗証番号（PIN）".
+ "transcription": {{"same_value": [..], "no_match": [..]}},
+     // {L}-specific equivalences a judge would wrongly call a mismatch (ä = ae, 万-based grouping, a special
+     // reading of 0), and close-looking forms that are different values. Usually [] for Latin-script languages.
+ "addenda": {{"<metric>": [{{"note": str, "prevents": str}}]}}
+     // OPTIONAL, max 2 per metric, metrics: {metrics}. Only for a {L} fact that fits NO field above and that
+     // the native reference guidance would plausibly contain. "prevents" names the concrete judge mistake.
+}}
+
+Before answering, work through your own letter_names and digit_names and consider each category below for
+{L}. Include an item only if a native {L} speaker would name it as a classic mix-up in spelled codes over the
+phone:
+- letter names that rhyme AND differ only in one similar consonant (same place or manner: b/d/p/t, m/n/l,
+  f/s). Give the whole such group (e.g. M/N/L rather than M/N), but at most 5 letters per group; a shared
+  vowel alone is not enough (a name that is only a vowel, or differs in two sounds, is not in the group)
+- letters that exist only in {L} or whose {L} name is close to another letter's (an extra letter vs its base
+  letter, two vowel names that collide)
+- digit / number words that are near-homophones (of each other, or a unit vs a teen or tens word)
+- letter/digit near-pairs and exact homophones
+- consonants or vowels that regional accents merge or devoice (put these in accent_notes)
+- long-form names or spelling words that select the other member of a same-sound pair (wrong_by_name)
+- spellings of names that are indistinguishable by sound (alphabetic scripts only; romanization variants of
+  names in other scripts do not count)
+Groups that hold in almost every language (e.g. M/N) are fine, but the profile must also capture what is
+specific to {L}. "confusable": at most 8 groups, most common first. Items name forms; they never explain why.
+"letter_note": one short sentence at most.
+
+Shared judge prompts (language-neutral) the guidance is inserted into:
+<<<
+{shared}
+>>>
+
+Profiles for other languages, extracted from guidance written by native speakers. They show the expected
+depth, brevity and kind of content; they are examples, not a template to copy for {L}:
+{references}
+
+Return only the JSON object."""
+
+
+def _bullets(items: list) -> list[str]:
+    return [f"- {str(i).strip()}" for i in items if isinstance(i, str) and i.strip()]
+
+
+def _group(heading: str | None, items: list, language_name: str) -> list[str]:
+    lines = _bullets(items)
+    if not lines:
+        return []
+    return ([heading.replace("{L}", language_name)] if heading else []) + lines
+
+
+def _as_list(value: Any) -> list:
+    return value if isinstance(value, list) else []
+
+
+def _fragment(text: str) -> str:
+    """Fit an LLM string into the middle of a template sentence: no leading capital, no final period."""
+    text = str(text).strip().rstrip(".").strip()
+    return text[:1].lower() + text[1:] if text[:2] != text[:2].upper() else text
+
+
+def _join_blocks(blocks: list[list[str]], sep: str = "\n") -> str:
+    return sep.join("\n".join(b) for b in blocks if b)
+
+
+def _render_speech_fidelity(metric: str, data: dict, language_name: str) -> str:
+    L = language_name
+    h = _SPEECH_HEADINGS[metric]
+    letters = data.get("letter_names") or {}
+    digits = data.get("digit_names") or {}
+    if sorted(letters) != _LETTERS or sorted(digits) != _DIGITS:
+        raise ValueError(f"letter_names / digit_names must cover A-Z and 0-9, got {letters!r} / {digits!r}")
+
+    correct: list[str] = []
+    if data.get("latin_script"):
+        note = f" {data['letter_note'].strip()}" if data.get("letter_note") else ""
+        correct.append(
+            f"- When a code is spelled letter by letter in {L}, it is correct to say each letter and digit using "
+            f"its {L} name. The terms in brackets show the {L} pronunciation, written with {L} spelling "
+            f"conventions (not English ones). A letter or digit said this way is correct:"
+        )
+        correct.append("  - Letters: " + ", ".join(f"{k} ({letters[k]})" for k in _LETTERS) + "." + note)
+        correct.append("  - Digits: " + ", ".join(f"{k} ({digits[k]})" for k in _DIGITS) + ".")
+    else:
+        note = f" {data['letter_note'].strip()}" if data.get("letter_note") else ""
+        correct.append(
+            f"- These are the {L} names of Latin letters in a spelled code; a letter said this way is correct: "
+            + ", ".join(letters[k] for k in _LETTERS)
+            + "."
+            + note
+        )
+        correct.append(
+            f"- These are the {L} digit names in a spelled code; a digit said this way is correct: "
+            + ", ".join(digits[k] for k in _DIGITS)
+            + "."
+        )
+    for key, plural, singular in (
+        ("number_readings", "numbers", "number"),
+        ("time_readings", "times", "time"),
+        ("date_readings", "dates and years", "date or year"),
+    ):
+        if data.get(key):
+            correct.append(
+                f"- This is how {plural} are read in {L}; a {singular} read this way is correct: "
+                f"{data[key].strip().rstrip('.')}."
+            )
+    correct.extend(_bullets(_as_list(data.get("correct_other"))))
+
+    wrong_entity = _as_list(data.get("wrong_entity"))
+    wrong_value = [v for v in _as_list(data.get("wrong_value")) if isinstance(v, str) and v.strip()]
+    if metric != "agent_speech_fidelity" and wrong_value:
+        wrong_entity = [*wrong_entity, "A different value: " + ", ".join(wrong_value) + "."]
+
+    groups = [
+        ["**Correct, does not lower the rating:**", *correct],
+        _group(h["english_names"], _as_list(data.get("english_names")), L),
+        _group(h["wrong_entity"], wrong_entity, L),
+        _group(h["unusual"], _as_list(data.get("unusual")), L),
+        _group(h["sound_alike"], _as_list(data.get("sound_alike")), L),
+        _group(h["same_sound"], _as_list(data.get("same_sound")), L),
+        _group("**Not wrong language, does not lower the rating:**", _as_list(data.get("loanwords")), L),
+    ]
+    if "regional_user" in h:
+        groups.append(_group(h["regional_user"], _as_list(data.get("regional_user")), L))
+    return _join_blocks(groups)
+
+
+def _render_faithfulness(data: dict, language_name: str) -> str:
+    L = language_name
+    groups = [
+        _group(
+            "**For letters and digits that sound alike in {L}, apply the rules for failing_to_disambiguate and "
+            "fabricating_tool_parameters:**",
+            _as_list(data.get("confusables")),
+            L,
+        )
+    ]
+    loanwords = [w.strip() for w in _as_list(data.get("loanwords")) if isinstance(w, str) and w.strip()]
+    loan_items = ([", ".join(loanwords) + "."] if loanwords else []) + _as_list(data.get("loanword_notes"))
+    groups.append(
+        _group(
+            "**Established loanwords (wrong_language): normal {L}, never a language violation, does not lower the "
+            "rating. Examples, not a complete list:**",
+            loan_items,
+            L,
+        )
+    )
+    gender = data.get("speaker_gender")
+    if isinstance(gender, dict):
+        pairs = [p for p in _as_list(gender.get("pairs")) if isinstance(p, list) and len(p) == 2]
+        if not pairs or not gender.get("forms") or not gender.get("not_flagged"):
+            raise ValueError(f"speaker_gender is incomplete: {gender!r}")
+        pair_text = ", ".join(f'"{m}" / "{f}"' for m, f in pairs)
+        forms, not_flagged = (_fragment(gender[k]) for k in ("forms", "not_flagged"))
+        groups.append(
+            [
+                "**Speaker gender, only when the assistant was given a speaking gender:**",
+                "- An error, flag it under the `wrong_language` dimension: the assistant refers to itself with a "
+                "gender other than the one assigned, in any word that agrees with the speaker: "
+                f"{forms} (male / female: {pair_text}).",
+                "- Not an error, do not flag: gendered words that do not refer to the assistant itself, such as "
+                f"{not_flagged}.",
+            ]
+        )
+    return _join_blocks(groups, sep="\n\n")
+
+
+def _render_conciseness(data: dict, language_name: str) -> str:
+    return _join_blocks(
+        [
+            _group(
+                "**Cultural-norms exception: not filler, do not flag verbosity_or_filler for:**",
+                _as_list(data.get("cultural_norms")),
+                language_name,
+            ),
+            _group(
+                "**Not excess length, do not flag any failure mode for it:**",
+                _as_list(data.get("not_excess_length")),
+                language_name,
+            ),
+        ],
+        sep="\n\n",
+    )
+
+
+def _render_speakability(data: dict, language_name: str) -> str:
+    examples = [e for e in _as_list(data.get("gloss_examples")) if isinstance(e, str) and e.strip()]
+    if not data.get("applies") or not examples:
+        return ""
+    return _join_blocks(
+        [
+            [
+                "**Violation 5, gloss (rating 0):** a term immediately followed, in parentheses or after a slash "
+                "(half-width or full-width), by its translation into another language, its reading, its "
+                "abbreviation or an exact synonym, so the listener hears the same thing twice. For example:",
+                "- " + ", ".join(f'"{e}"' for e in examples) + ".",
+            ],
+            _group(
+                "**Not a violation, does not lower the rating:**", _as_list(data.get("not_violation")), language_name
+            ),
+        ],
+        sep="\n\n",
+    )
+
+
+def _render_conversation_progression(data: dict, language_name: str) -> str:
+    if not data.get("applies") or not data.get("homophones"):
+        return ""
+    L = language_name
+    with_names = bool(data.get("includes_names"))
+    subject = "A code or name" if with_names else "A code"
+    kinds = "letter, digit or spelling" if with_names else "letter or digit"
+    questions = [q for q in _as_list(data.get("example_questions")) if isinstance(q, str) and q.strip()]
+    example = f" (e.g. {', '.join(f'「{q}」' for q in questions)})" if questions else ""
+    return "\n".join(
+        [
+            f"Some spoken values are homophones in {L}: {data['homophones'].strip().rstrip('.')}. "
+            "The words alone cannot tell the assistant which one the user meant.",
+            "",
+            "**Flag once under question_quality (\"Failing to ask for clarification when the user's request was "
+            'genuinely ambiguous"):**',
+            f"- {subject} contains such an element, a lookup failed or the user corrected the value, and the "
+            "assistant kept calling tools with guessed interpretations or looped over several turns instead of "
+            f"asking which was meant{example}.",
+            "",
+            "**Not a flag, does not lower the rating:**",
+            "- Not asking when the first lookup succeeded and nothing signals ambiguity.",
+            "- Asking such a disambiguation question, or asking again after a failed lookup: this is never "
+            "redundant_statements or information_loss, even though the user already said the value, because the "
+            f"spoken value did not determine the {kinds}.",
+        ]
+    )
+
+
+def _render_transcription(data: dict, language_name: str) -> str:
+    return _join_blocks(
+        [
+            _group(
+                "**The following are the same value (correct = true):**",
+                _as_list(data.get("same_value")),
+                language_name,
+            ),
+            _group("**No match, correct = false:**", _as_list(data.get("no_match")), language_name),
+        ],
+        sep="\n\n",
+    )
+
+
+# Common English spellings of English letter names, as a transcript would show them. Vowels only match a
+# bare-letter name ("a"): a native "ee" for E is the English name of I, not of E.
+_ENGLISH_LETTER_SPELLINGS = {
+    "A": {"a"}, "B": {"bee"}, "C": {"cee"}, "D": {"dee"}, "E": {"e"}, "G": {"gee"}, "I": {"i"}, "J": {"jay"},
+    "K": {"kay"}, "O": {"o"}, "P": {"pee"}, "T": {"tee"}, "U": {"u"}, "V": {"vee"}, "W": {"wee"}, "Z": {"zee"},
+}  # fmt: skip
+_ENGLISH_VOWEL_NAMES = {"A": "ay", "E": "ee", "I": "eye", "O": "oh", "U": "you"}
+
+
+def _english_lookalike_notes(profile: dict, language_name: str) -> list[str]:
+    """Letters whose native name is spelled like the English one, which a judge reading a transcript may misjudge."""
+    if not profile.get("latin_script"):
+        return []
+    L = language_name
+    letters = profile.get("letter_names") or {}
+    variants = {k: {v.strip().lower() for v in str(letters.get(k, "")).split("/")} for k in _ENGLISH_LETTER_SPELLINGS}
+    vowels = [k for k in "AEIOU" if k.lower() in variants[k]]
+    words = [k for k in _ENGLISH_LETTER_SPELLINGS if k not in vowels and variants[k] & _ENGLISH_LETTER_SPELLINGS[k]]
+    notes = []
+    if words:
+        named = ", ".join(f"{k} ({min(variants[k] & _ENGLISH_LETTER_SPELLINGS[k])})" for k in words)
+        notes.append(
+            f"Some of these are spelled like English letter names but are the {L} ones: {named}. "
+            f"Said with the {L} sound, they are not English."
+        )
+    if vowels:
+        said = ", ".join(f"'{_ENGLISH_VOWEL_NAMES[k]}'" for k in vowels)
+        notes.append(
+            f"{', '.join(vowels)} are named with their {L} vowel sound; said the English way ({said}), they are "
+            "English names: see the English letter or digit names below."
+        )
+    return notes
+
+
+def _objects(profile: dict, key: str, *fields: str) -> list[dict]:
+    return [o for o in _as_list(profile.get(key)) if isinstance(o, dict) and all(o.get(f) for f in fields)]
+
+
+def _forms_names(o: dict) -> str:
+    return f"{str(o['forms']).strip()} ({str(o['names']).strip()})"
+
+
+def _profile_to_slots(profile: dict, language_name: str) -> dict[str, dict]:
+    """Map the language profile to the per-metric slot dicts the renderers take."""
+    p = profile
+    confusable = [_forms_names(o) for o in _objects(p, "confusable", "forms", "names")]
+    same = _objects(p, "same_sound", "forms", "names")
+    same_code = [_forms_names(o) for o in same if o.get("scope") != "name_spelling"]
+    same_names = [_forms_names(o) for o in same if o.get("scope") == "name_spelling"]
+    accents = [a for a in _as_list(p.get("accent_notes")) if isinstance(a, str) and a.strip()]
+    loanwords = [w for w in _as_list(p.get("loanwords")) if isinstance(w, str) and w.strip()]
+
+    speech = {
+        k: p.get(k)
+        for k in ("latin_script", "letter_names", "letter_note", "digit_names", "number_readings", "time_readings")
+        + ("date_readings", "wrong_value", "unusual")
+    }
+    speech |= {
+        "correct_other": [*_english_lookalike_notes(p, language_name), *_as_list(p.get("correct_other"))],
+        "english_names": p.get("english_name_traps"),
+        "wrong_entity": [
+            f"'{o['name']}' said for {o['said_for']} (it names {o['means']})"
+            for o in _objects(p, "wrong_by_name", "name", "said_for", "means")
+        ],
+        "sound_alike": ([", ".join(confusable)] if confusable else []) + accents,
+        "same_sound": ([", ".join(same_code)] if same_code else [])
+        + (["In names spelled by sound: " + ", ".join(same_names)] if same_names else []),
+        "loanwords": ["Established loanwords, e.g. " + ", ".join(loanwords) + "."] if loanwords else [],
+    }
+
+    # Letter/digit homophones get their own line below, so only letter-only same-sound pairs are listed here.
+    same_letters = [
+        _forms_names(o)
+        for o in same
+        if o.get("scope") != "name_spelling" and not any(ch.isdigit() for ch in str(o["forms"]))
+    ]
+    confusables = ([", ".join(confusable)] if confusable else []) + accents
+    if same_letters:
+        confusables.append("Same sound: " + ", ".join(same_letters))
+    if same_names:
+        confusables.append("Same sound in names: " + ", ".join(same_names))
+    if p.get("letter_digit_homophones"):
+        confusables.append("Letter/digit homophones: " + str(p["letter_digit_homophones"]).strip().rstrip(".") + ".")
+
+    register = p.get("register") or {}
+    return {
+        **dict.fromkeys(_SPEECH_FIDELITY_METRICS, speech),
+        "faithfulness": {
+            "confusables": confusables,
+            "loanwords": loanwords,
+            "loanword_notes": p.get("loanword_notes"),
+            "speaker_gender": p.get("speaker_gender"),
+        },
+        "conciseness": register if register.get("applies") else {},
+        "speakability": p.get("script_mixing") or {},
+        "conversation_progression": {
+            "applies": bool(p.get("letter_digit_homophones")),
+            "homophones": p.get("letter_digit_homophones"),
+            "includes_names": p.get("names_logographic"),
+            "example_questions": p.get("disambiguation_questions"),
+        },
+        "transcription_accuracy_key_entities": p.get("transcription") or {},
+    }
+
+
+_GUIDANCE_RENDERERS: dict[str, Any] = {
+    **{m: (lambda d, n, m=m: _render_speech_fidelity(m, d, n)) for m in _SPEECH_FIDELITY_METRICS},
+    "faithfulness": _render_faithfulness,
+    "conciseness": _render_conciseness,
+    "speakability": _render_speakability,
+    "conversation_progression": _render_conversation_progression,
+    "transcription_accuracy_key_entities": _render_transcription,
+}
+
+
+def _render_profile(profile: dict, metric: str, language_name: str) -> str:
+    text = _GUIDANCE_RENDERERS[metric](_profile_to_slots(profile, language_name)[metric], language_name).strip()
+    notes = [a["note"] for a in _objects(profile.get("addenda") or {}, metric, "note")]
+    if notes:
+        text = _join_blocks([[text] if text else [], _group("**Also note:**", notes, language_name)], sep="\n\n")
+    return text
+
+
+GUIDANCE_SAMPLES = 3  # Profiles sampled per language; structured items are kept when at least 2 agree.
+
+
+def _form_pairs(o: dict) -> set[tuple[str, str]]:
+    forms = sorted({t.strip().upper() for t in str(o.get("forms", "")).split("/") if t.strip()})
+    return {(a, b) for i, a in enumerate(forms) for b in forms[i + 1 :]}
+
+
+def _vote_profiles(samples: list[dict]) -> dict:
+    """Merge sampled profiles: free text from the first sample, structured items by majority.
+
+    Groups vote by their pairs, so "M/N" in one sample and "M/N/L" in another both support M/N; a group is
+    kept when at least half its pairs have majority support.
+    """
+    majority = len(samples) // 2 + 1
+    out = dict(samples[0])
+    for field in ("confusable", "same_sound"):
+        items = [o for s in samples for o in _as_list(s.get(field)) if isinstance(o, dict) and _form_pairs(o)]
+        support: dict[tuple[str, str], int] = {}
+        for s in samples:
+            for pair in set().union(set(), *(_form_pairs(o) for o in _as_list(s.get(field)) if isinstance(o, dict))):
+                support[pair] = support.get(pair, 0) + 1
+        covered: set[tuple[str, str]] = set()
+        kept = []
+        for o in sorted(items, key=lambda o: -len(_form_pairs(o))):  # prefer the fullest agreed group
+            pairs = _form_pairs(o)
+            if 2 * sum(support[x] >= majority for x in pairs) >= len(pairs) and not pairs <= covered:
+                covered |= pairs
+                kept.append(o)
+        out[field] = kept
+
+    def wrong_key(o: dict) -> tuple[str, str]:
+        return str(o.get("said_for")).strip().upper(), str(o.get("means")).strip().upper()
+
+    counts: dict[tuple[str, str], int] = {}
+    for s in samples:
+        for k in {wrong_key(o) for o in _as_list(s.get("wrong_by_name")) if isinstance(o, dict)}:
+            counts[k] = counts.get(k, 0) + 1
+    seen: set[tuple[str, str]] = set()
+    out["wrong_by_name"] = []
+    for s in samples:
+        for o in _as_list(s.get("wrong_by_name")):
+            if isinstance(o, dict) and counts.get(k := wrong_key(o), 0) >= majority and k not in seen:
+                seen.add(k)
+                out["wrong_by_name"].append(o)
+
+    # Whether a whole metric gets guidance is decided by majority too.
+    if sum(bool(s.get("letter_digit_homophones")) for s in samples) < majority:
+        out["letter_digit_homophones"] = None
+    for section in ("register", "script_mixing"):
+        if sum(bool((s.get(section) or {}).get("applies")) for s in samples) < majority:
+            out[section] = {"applies": False}
+
+    def has_transcription(s: dict) -> bool:
+        return any(_as_list((s.get("transcription") or {}).get(k)) for k in ("same_value", "no_match"))
+
+    if sum(has_transcription(s) for s in samples) < majority:
+        out["transcription"] = {}
+    return out
+
+
+JUDGE_PROMPTS_PATH = REPO_ROOT / "configs" / "prompts" / "judge.yaml"
+# Profiles extracted from the native-speaker guidance of these languages (Latin and non-Latin, gendered and
+# not), shown to the LLM as examples. Re-extract them when that guidance changes.
+REFERENCE_PROFILES_DIRNAME = "reference_profiles"
+
+
+def _reference_profiles(guidance_dir: Path) -> str:
+    paths = sorted((guidance_dir / REFERENCE_PROFILES_DIRNAME).glob("*.json"))
+    refs = [
+        f"--- {p.stem} ---\n{json.dumps(json.loads(p.read_text(encoding='utf-8')), ensure_ascii=False)}" for p in paths
+    ]
+    return "\n\n".join(refs) or "(none)"
+
+
+def _shared_judge_prompt(metric: str) -> str:
+    """The metric's language-neutral judge prompt, so generated guidance can be checked against it."""
+    prompts = yaml.safe_load(JUDGE_PROMPTS_PATH.read_text(encoding="utf-8"))["judge"].get(metric) or {}
+    return prompts.get("user_prompt") or "(none)"
+
+
+def _write_guidance_entry(path: Path, language: str, text: str, dry_run: bool) -> None:
+    """Insert or replace the ``<language>: |`` block in a guidance YAML, keeping comments and other entries."""
+    lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+    block = [f"{language}: |", *(f"  {line}" if line else "" for line in text.splitlines())]
+    start = next((i for i, line in enumerate(lines) if re.match(rf"^['\"]?{re.escape(language)}['\"]?:", line)), None)
+    if start is None:
+        while lines and not lines[-1].strip():
+            lines.pop()
+        lines = [*lines, "", *block] if lines else block
+    else:
+        end = next(
+            (i for i in range(start + 1, len(lines)) if lines[i] and not lines[i].startswith((" ", "\t"))), len(lines)
+        )
+        while end > start + 1 and not lines[end - 1].strip():
+            end -= 1
+        lines[start:end] = block
+    new_text = "\n".join(lines) + "\n"
+    parsed = yaml.safe_load(new_text) or {}
+    if str(parsed.get(language, "")).strip() != text.strip():
+        raise ValueError(f"Internal: guidance block for {language!r} did not round-trip through YAML in {path}")
+    if dry_run:
+        logger.info(f"[dry-run] would write {language!r} guidance to {path.name}:\n{text}")
+        return
+    path.write_text(new_text, encoding="utf-8")
+    logger.info(f"Wrote {language!r} guidance to {path.name}")
+
+
+async def update_judge_language_guidance(
+    language: str,
+    language_name: str,
+    guidance_dir: Path,
+    llm: LLMClient,
+    dry_run: bool,
+    overwrite: bool = False,
+) -> None:
+    """Generate per-metric judge guidance for *language* in ``configs/prompts/judge_language_guidance/``.
+
+    Idempotent per file: a metric that already has an entry for ``language`` is skipped. A regional
+    variant (``fr-CA``) inherits its base language's guidance at runtime, so files that already have the
+    base entry are skipped too. Metrics where the language needs no guidance get no entry.
+    """
+    base = base_language(language)
+
+    def needs(metric: str) -> bool:
+        path = guidance_dir / f"{metric}.yaml"
+        existing = (yaml.safe_load(path.read_text(encoding="utf-8")) or {}) if path.exists() else {}
+        if language in existing and not overwrite:
+            return False
+        return not (language != base and base in existing)
+
+    metrics = [m for m in _GUIDANCE_RENDERERS if needs(m)]
+    if not metrics:
+        logger.info(f"Judge guidance for {language!r} already present in every metric file — skipping")
+        return
+    prompt = (
+        _PROFILE_PROMPT.replace("{{", "{")
+        .replace("}}", "}")
+        .replace("{shared}", "\n\n".join(f"[{m}]\n{_shared_judge_prompt(m)}" for m in _GUIDANCE_RENDERERS))
+        .replace("{references}", _reference_profiles(guidance_dir))
+        .replace("{metrics}", ", ".join(_GUIDANCE_RENDERERS))
+        .replace("{L}", language_name)
+        .replace("{lang}", language)
+    )
+    replies = await asyncio.gather(
+        *(
+            llm.generate_text([{"role": "user", "content": prompt}], response_format={"type": "json_object"})
+            for _ in range(GUIDANCE_SAMPLES)
+        )
+    )
+    profile = _vote_profiles([extract_and_load_json(text) for text, _ in replies])
+    for metric in metrics:
+        rendered = _render_profile(profile, metric, language_name)
+        if not rendered:
+            logger.info(f"No {metric} guidance needed for {language_name}")
+            continue
+        _write_guidance_entry(guidance_dir / f"{metric}.yaml", language, rendered, dry_run)
+    logger.warning(
+        f"Judge language guidance for {language_name} is LLM-generated: have a native speaker review "
+        f"the new {language!r} entries in {guidance_dir} before relying on the scores."
+    )
 
 
 def main() -> int:

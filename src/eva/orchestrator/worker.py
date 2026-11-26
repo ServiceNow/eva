@@ -65,10 +65,14 @@ def _get_server_class(framework: str, s2s_provider: str | None = None) -> type[A
         from eva.assistant.cartesia_server import CartesiaAssistantServer
 
         return CartesiaAssistantServer
+    elif framework == "phonic":
+        from eva.assistant.phonic_server import PhonicAssistantServer
+
+        return PhonicAssistantServer
     else:
         raise ValueError(
             f"Unknown framework: {framework!r}. "
-            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, smallest_hydra, cartesia"
+            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, smallest_hydra, cartesia, phonic"
         )
 
 
@@ -328,7 +332,7 @@ class ConversationWorker:
         # be provisioned with a matching check-in time. Other S2S servers handle turn-taking
         # natively and don't accept this kwarg.
         server_kwargs: dict[str, Any] = {}
-        if self.config.framework in ("pipecat", "cartesia"):
+        if self.config.framework in ("pipecat", "cartesia", "phonic"):
             server_kwargs["turn_end_fallback_time"] = self.config.turn_end_fallback_time
         self._assistant_server = server_cls(
             current_date_time=self.record.current_date_time,

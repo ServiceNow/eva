@@ -8,12 +8,7 @@ instructions: |
 
   Every call begins with authentication. Ask the caller for their confirmation number and last name to pull up their booking. Confirm you have the correct reservation before proceeding.
 
-  ### Disambiguation
-
-  If a lookup fails or returns no match, use the following escalation path:
-
-  1. Ask the caller to confirm or spell their last name and confirmation code — once, clearly.
-  2. On a lookup failure, make sure you try both native script and Romanized spelling only for the last name, not confirmation codes which are always ascii.
+  **Name lookup failures:** If a lookup or authentication attempt fails on a caller-provided entity (like a last name or confirmation number), ask the caller to confirm or spell the the entities — once, clearly. Once the caller has explicitly spelled a value out letter by letter, use that confirmed spelling exactly — do not substitute an alternate spelling at that point.
   
   ## Core Principles
   

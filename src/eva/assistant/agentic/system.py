@@ -19,6 +19,7 @@ from eva.assistant.agentic.audit_log import (
 )
 from eva.assistant.tools.tool_executor import ToolExecutor, execute_and_log_tool
 from eva.models.agents import AgentConfig
+from eva.models.config import gender_word
 from eva.utils.conversation_checks import LLM_GENERIC_ERROR_MESSAGE as GENERIC_ERROR
 from eva.utils.error_handler import LLMIncompleteResponseError, categorize_error
 from eva.utils.log_processing import truncate_data_uris
@@ -147,9 +148,8 @@ class AgenticSystem:
         if self.pre_tool_speech == "auto":
             self.system_prompt += "\n\n" + self.prompt_manager.get_prompt("agent.pre_tool_speech")
         if self.assistant_gender is not None:
-            gender_word = "male" if self.assistant_gender == "M" else "female"
             self.system_prompt += "\n\n" + self.prompt_manager.get_prompt(
-                "agent.gender_instruction", gender_word=gender_word
+                "agent.gender_instruction", gender_word=gender_word(self.assistant_gender)
             )
         # Build tools for the LLM
         self.tools = agent.build_tools_for_agent()

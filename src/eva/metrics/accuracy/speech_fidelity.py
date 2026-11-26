@@ -27,7 +27,7 @@ class SpeechFidelityMetric(SpeechFidelityBaseMetric):
     """
 
     name = "agent_speech_fidelity"
-    version = "v0.4"
+    version = "v0.5"
     description = "Audio-based evaluation of agent entity fidelity"
     category = "accuracy"
     role = "assistant"
@@ -65,6 +65,7 @@ class SpeechFidelityMetric(SpeechFidelityBaseMetric):
             audio_b64 = self.encode_audio_segment(audio_segment)
 
             prompt = self.get_judge_prompt(
+                language=context.language,
                 conversation_trace_formatted=trace_formatted,
                 expected_language=context.language_display_name,
             )

@@ -21,7 +21,7 @@ from eva.metrics.processor import MetricsContextProcessor
 from eva.metrics.registry import MetricRegistry, get_global_registry
 from eva.metrics.utils import direction_for_sub_metric
 from eva.metrics.versioning import _CURRENT_METRIC_VERSION
-from eva.models.config import PipelineType, get_pipeline_type
+from eva.models.config import PERSONA_GENDER, PipelineType, get_pipeline_type
 from eva.models.record import EvaluationRecord
 from eva.models.results import ConversationResult, MetricScore, PassAtKResult, RecordMetrics
 from eva.utils.bootstrap import mean_ci_fields, named_ci_fields, run_seed
@@ -154,6 +154,8 @@ class MetricsRunner:
         # Determine pipeline type from config
         model_data = config_data.get("model", {})
         self._pipeline_type = get_pipeline_type(model_data) if model_data else PipelineType.CASCADE
+        # assistant_gender is ignored for S2S at run time (the provider picks the voice), so it is ignored here too.
+        self._assistant_gender = model_data.get("assistant_gender") if self._pipeline_type != PipelineType.S2S else None
 
         agent_config_path = config_data.get("agent_config_path")
 
@@ -621,6 +623,8 @@ class MetricsRunner:
             agent_id=self._agent_config["id"],
             current_date_time=record.current_date_time,
             language=self._run_language,
+            assistant_gender=getattr(self, "_assistant_gender", None),
+            user_gender=PERSONA_GENDER.get(resolved_user_config.get("user_persona_id")),
             # Basic stats from result
             num_turns=result.num_turns,
             tools_called=result.tools_called,
