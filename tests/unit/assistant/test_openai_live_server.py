@@ -13,6 +13,7 @@ import yaml
 
 from eva.assistant.openai_live_server import (
     ASSISTANT_QUIET_FLUSH_MS,
+    BACKCHANNEL_POLICIES,
     FORWARD_SILENCE_HOLD_MS,
     INTERRUPT_TAIL_MS,
     LIVE_INPUT_MAX_LEAD_S,
@@ -27,6 +28,7 @@ from eva.assistant.openai_live_server import (
     drop_empty_optional_args,
     load_live_prompts,
     optional_param_names,
+    with_current_date,
 )
 from eva.models.agents import AgentConfig, AgentTool, AgentToolParameter
 from eva.models.config import ModelConfig
@@ -44,6 +46,35 @@ def _write_agent_dir(tmp_path: Path, gpt_live: dict | None) -> Path:
         live_dir.mkdir()
         (live_dir / "airline_agent.yaml").write_text(yaml.safe_dump(gpt_live), encoding="utf-8")
     return agent_yaml
+
+
+class TestBackchannelPolicy:
+    @pytest.mark.parametrize(
+        ("mode", "expected"),
+        [("auto", BACKCHANNEL_POLICIES["auto"]), ("off", "Don't use backchannels.")],
+    )
+    def test_server_substitutes_configured_policy_into_frontend_prompt(self, tmp_path, mode, expected):
+        agent_yaml = _write_agent_dir(
+            tmp_path, {"frontend_instructions": "Policy: {backchannel_policy}", "backend_instructions": "BACK"}
+        )
+        model_config = ModelConfig(s2s="gpt-live-1", s2s_params=S2S_PARAMS, backchanneling=mode)
+        with patch("eva.assistant.base_server.ToolExecutor"):
+            srv = OpenAILiveAssistantServer(
+                current_date_time="2026-10-28 12:00",
+                pipeline_config=model_config,
+                agent=_agent(),
+                agent_config_path=str(agent_yaml),
+                scenario_db_path=str(tmp_path / "db.json"),
+                output_dir=tmp_path / "out",
+                port=0,
+                conversation_id="conv",
+            )
+        assert srv._frontend_instructions.endswith(f"Policy: {expected}")
+
+
+class TestWithCurrentDate:
+    def test_prefixes_the_date(self):
+        assert with_current_date("prompt", "2026-10-28 12:00") == "Today is 2026-10-28 12:00.\n\nprompt"
 
 
 class TestLoadLivePrompts:
@@ -556,11 +587,11 @@ class TestServerInit:
         srv = _make_server(tmp_path, params, parallel_tool_calls=True)
         cfg = srv._build_session_config()
         assert cfg["model"] == "gpt-live-1"
-        assert cfg["instructions"] == "FRONT"
+        assert cfg["instructions"] == "Today is 2026-10-28 12:00.\n\nFRONT"
         assert cfg["audio"]["output"]["voice"] == "cedar"
         responses = cfg["delegation"]["responses"]
         assert responses["model"] == "gpt-6-luna"
-        assert responses["instructions"] == "BACK"
+        assert responses["instructions"] == "Today is 2026-10-28 12:00.\n\nBACK"
         assert responses["reasoning"] == {"effort": "low"}
         assert responses["parallel_tool_calls"] is True
         assert [t["name"] for t in responses["tools"]] == [t.function_name for t in _agent().tools]

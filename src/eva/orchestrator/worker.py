@@ -24,17 +24,24 @@ logger = get_logger(__name__)
 USER_SIMULATOR_SHUTDOWN_GRACE_SECONDS = 20
 
 
-def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
+def _get_server_class(framework: str, s2s_provider: str | None = None) -> type[AbstractAssistantServer]:
     """Return the server class for the given framework name.
 
     Uses lazy imports to avoid importing heavy dependencies (pipecat, openai, etc.)
-    unless the framework is actually selected.
+    unless the framework is actually selected. Apriel uses a dedicated adapter
+    only when explicitly selected by provider; OpenAI and other providers retain
+    their original implementation.
     """
     if framework == "pipecat":
         from eva.assistant.pipecat_server import PipecatAssistantServer
 
         return PipecatAssistantServer
     elif framework == "openai_realtime":
+        if (s2s_provider or "").lower() == "apriel-realtime":
+            from eva.assistant.apriel_realtime_server import AprielRealtimeAssistantServer
+
+            return AprielRealtimeAssistantServer
+
         from eva.assistant.openai_realtime_server import OpenAIRealtimeAssistantServer
 
         return OpenAIRealtimeAssistantServer
@@ -58,6 +65,10 @@ def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
         from eva.assistant.cartesia_server import CartesiaAssistantServer
 
         return CartesiaAssistantServer
+    elif framework == "phonic":
+        from eva.assistant.phonic_server import PhonicAssistantServer
+
+        return PhonicAssistantServer
     elif framework == "openai_live":
         from eva.assistant.openai_live_server import OpenAILiveAssistantServer
 
@@ -65,7 +76,7 @@ def _get_server_class(framework: str) -> type[AbstractAssistantServer]:
     else:
         raise ValueError(
             f"Unknown framework: {framework!r}. "
-            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, smallest_hydra, cartesia, "
+            "Supported: pipecat, openai_realtime, gemini_live, elevenlabs, grok_voice, smallest_hydra, cartesia, phonic, "
             "openai_live"
         )
 
@@ -319,14 +330,14 @@ class ConversationWorker:
 
     async def _start_assistant(self) -> None:
         """Start the assistant server using the configured framework."""
-        server_cls = _get_server_class(self.config.framework)
+        server_cls = _get_server_class(self.config.framework, self.config.model.s2s)
         resolved_db_path = self._materialize_resolved_scenario_db()
         # The turn-end fallback applies to the Pipecat pipelines (cascade + audio-LLM), whose
         # turn detection can drop a user turn, and to Cartesia Managed Agents, whose agents must
         # be provisioned with a matching check-in time. Other S2S servers handle turn-taking
         # natively and don't accept this kwarg.
         server_kwargs: dict[str, Any] = {}
-        if self.config.framework in ("pipecat", "cartesia"):
+        if self.config.framework in ("pipecat", "cartesia", "phonic"):
             server_kwargs["turn_end_fallback_time"] = self.config.turn_end_fallback_time
         self._assistant_server = server_cls(
             current_date_time=self.record.current_date_time,

@@ -218,6 +218,20 @@ class ModelConfig(BaseModel):
         None,
         description="Forward parallel_tool_calls when tools are present; None leaves provider defaults.",
     )
+    backchanneling: Literal["off", "auto"] = Field(
+        "auto",
+        description=(
+            "Backchannel policy in the GPT-Live (openai_live) frontend prompt: 'off' tells the model not "
+            "to backchannel, 'auto' allows moderate backchannels. Note that backchannel control cannot be guaranteed. "
+            "Ignored by other pipelines."
+        ),
+    )
+
+    @field_validator("backchanneling", mode="before")
+    @classmethod
+    def _normalize_backchanneling(cls, value: str) -> str:
+        return value.strip().lower() if isinstance(value, str) else value
+
     assistant_gender: Literal["M", "F"] | None = Field(
         None,
         description=(
@@ -604,6 +618,7 @@ class RunConfig(BaseSettings):
         "grok_voice",
         "smallest_hydra",
         "cartesia",
+        "phonic",
         "openai_live",
     ] = Field(
         "pipecat",
@@ -616,6 +631,7 @@ class RunConfig(BaseSettings):
             "'grok_voice': xAI Grok voice realtime API."
             "'smallest_hydra': Smallest Hydra speech-to-speech API."
             "'cartesia': Cartesia Managed Agents over a WebSocket connection."
+            "'phonic': Phonic speech-to-speech API via the phonic SDK."
             "'openai_live': OpenAI GPT-Live API (gpt-live-1) with Responses delegation."
         ),
     )
@@ -772,7 +788,7 @@ class RunConfig(BaseSettings):
             "reprompt the caller ('sorry, I didn't catch that'), instead of waiting for the old "
             "hard inactivity timeout. Cancelled the moment the user starts speaking, so it only "
             "fires when turn detection drops a user turn. Applies to the Pipecat cascade and "
-            "audio-LLM pipelines. When unset, falls back to the old behavior of ending the "
+            "audio-LLM pipelines, and to Cartesia and Phonic agents (provisioned with the same value). When unset, falls back to the old behavior of ending the "
             "conversation after the provider's inactivity timeout elapses."
         ),
     )

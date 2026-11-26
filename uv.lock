@@ -722,6 +722,7 @@ dependencies = [
     { name = "onnxruntime" },
     { name = "openai" },
     { name = "pandas" },
+    { name = "phonic" },
     { name = "pipecat-ai" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -782,6 +783,7 @@ requires-dist = [
     { name = "openai", specifier = ">=3.12.0" },
     { name = "pandas", specifier = ">=2.0" },
     { name = "pandas", marker = "extra == 'apps'", specifier = ">=2.0" },
+    { name = "phonic", specifier = ">=0.33.9" },
     { name = "pipecat-ai", specifier = ">=1.9.0" },
     { name = "plotly", marker = "extra == 'apps'", specifier = ">=5.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0" },
@@ -1283,14 +1285,14 @@ resolution-markers = [
     "python_full_version < '3.12'",
 ]
 dependencies = [
-    { name = "filelock" },
-    { name = "fsspec" },
-    { name = "hf-xet", marker = "platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'" },
-    { name = "packaging" },
-    { name = "pyyaml" },
-    { name = "requests" },
-    { name = "tqdm" },
-    { name = "typing-extensions" },
+    { name = "filelock", marker = "python_full_version < '3.13'" },
+    { name = "fsspec", marker = "python_full_version < '3.13'" },
+    { name = "hf-xet", marker = "(python_full_version < '3.13' and platform_machine == 'aarch64') or (python_full_version < '3.13' and platform_machine == 'amd64') or (python_full_version < '3.13' and platform_machine == 'arm64') or (python_full_version < '3.13' and platform_machine == 'x86_64')" },
+    { name = "packaging", marker = "python_full_version < '3.13'" },
+    { name = "pyyaml", marker = "python_full_version < '3.13'" },
+    { name = "requests", marker = "python_full_version < '3.13'" },
+    { name = "tqdm", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7c/b7/8cb61d2eece5fb05a83271da168186721c450eb74e3c31f7ef3169fa475b/huggingface_hub-0.36.2.tar.gz", hash = "sha256:1934304d2fb224f8afa3b87007d58501acfda9215b334eed53072dd5e815ff7a", size = 649782, upload-time = "2026-02-06T09:24:13.098Z" }
 wheels = [
@@ -1305,15 +1307,15 @@ resolution-markers = [
     "python_full_version >= '3.13'",
 ]
 dependencies = [
-    { name = "filelock" },
-    { name = "fsspec" },
-    { name = "hf-xet", marker = "platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'" },
-    { name = "httpx" },
-    { name = "packaging" },
-    { name = "pyyaml" },
-    { name = "tqdm" },
-    { name = "typer" },
-    { name = "typing-extensions" },
+    { name = "filelock", marker = "python_full_version >= '3.13'" },
+    { name = "fsspec", marker = "python_full_version >= '3.13'" },
+    { name = "hf-xet", marker = "(python_full_version >= '3.13' and platform_machine == 'AMD64') or (python_full_version >= '3.13' and platform_machine == 'aarch64') or (python_full_version >= '3.13' and platform_machine == 'amd64') or (python_full_version >= '3.13' and platform_machine == 'arm64') or (python_full_version >= '3.13' and platform_machine == 'x86_64')" },
+    { name = "httpx", marker = "python_full_version >= '3.13'" },
+    { name = "packaging", marker = "python_full_version >= '3.13'" },
+    { name = "pyyaml", marker = "python_full_version >= '3.13'" },
+    { name = "tqdm", marker = "python_full_version >= '3.13'" },
+    { name = "typer", marker = "python_full_version >= '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version >= '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ae/76/b5efb3033d8499b17f9386beaf60f64c461798e1ee16d10bc9c0077beba5/huggingface_hub-1.5.0.tar.gz", hash = "sha256:f281838db29265880fb543de7a23b0f81d3504675de82044307ea3c6c62f799d", size = 695872, upload-time = "2026-02-26T15:35:32.745Z" }
 wheels = [
@@ -1708,7 +1710,7 @@ name = "markdown-it-py"
 version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "mdurl" },
+    { name = "mdurl", marker = "python_full_version >= '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/5b/f5/4ec618ed16cc4f8fb3b701563655a69816155e79e24a17b651541804721d/markdown_it_py-4.0.0.tar.gz", hash = "sha256:cb0a2b4aa34f932c007117b194e945bd74e0ec24133ceb5bac59009cda1cb9f3", size = 73070, upload-time = "2025-08-11T12:57:52.854Z" }
 wheels = [
@@ -2190,6 +2192,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/be/44/ed13eccdd0519eff265f44b670d46fbb0ec813e2274932dc1c0e48520f7d/patsy-1.0.2.tar.gz", hash = "sha256:cdc995455f6233e90e22de72c37fcadb344e7586fb83f06696f54d92f8ce74c0", size = 399942, upload-time = "2025-10-20T16:17:37.535Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/70/ba4b949bdc0490ab78d545459acd7702b211dfccf7eb89bbc1060f52818d/patsy-1.0.2-py2.py3-none-any.whl", hash = "sha256:37bfddbc58fcf0362febb5f54f10743f8b21dd2aa73dec7e7ef59d1b02ae668a", size = 233301, upload-time = "2025-10-20T16:17:36.563Z" },
+]
+
+[[package]]
+name = "phonic"
+version = "0.33.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pydantic-core" },
+    { name = "typing-extensions" },
+    { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4a/49/7aa861f6a8a430492eb41f4e10f8b6627875e0d8f6ac5d97a16fccf6e15d/phonic-0.33.9.tar.gz", hash = "sha256:c97c6b52ba4e7cc656600525ec0b358c00a4fd48f408175611eab75b40986410", size = 271470, upload-time = "2026-11-19T02:29:22.51Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/59/51/d377b519897f49dd92f1fd2e6510635110c50497e5c97a9114620a0b8371/phonic-0.33.9-py3-none-any.whl", hash = "sha256:0b7d73c9382267c586c8bc9e709840282d711bc0b4e5022aecc240aed3bdcc8c", size = 567764, upload-time = "2026-11-19T02:29:20.775Z" },
 ]
 
 [[package]]
@@ -2941,8 +2959,8 @@ name = "rich"
 version = "14.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "markdown-it-py" },
-    { name = "pygments" },
+    { name = "markdown-it-py", marker = "python_full_version >= '3.13'" },
+    { name = "pygments", marker = "python_full_version >= '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b3/c6/f3b320c27991c46f43ee9d856302c70dc2d0fb2dba4842ff739d5f46b393/rich-14.3.3.tar.gz", hash = "sha256:b8daa0b9e4eef54dd8cf7c86c03713f53241884e814f4e2f5fb342fe520f639b", size = 230582, upload-time = "2026-02-19T17:23:12.474Z" }
 wheels = [
@@ -3244,8 +3262,8 @@ name = "standard-aifc"
 version = "3.13.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "audioop-lts" },
-    { name = "standard-chunk" },
+    { name = "audioop-lts", marker = "python_full_version >= '3.13'" },
+    { name = "standard-chunk", marker = "python_full_version >= '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c4/53/6050dc3dde1671eb3db592c13b55a8005e5040131f7509cef0215212cb84/standard_aifc-3.13.0.tar.gz", hash = "sha256:64e249c7cb4b3daf2fdba4e95721f811bde8bdfc43ad9f936589b7bb2fae2e43", size = 15240, upload-time = "2024-10-30T16:01:31.772Z" }
 wheels = [
@@ -3266,7 +3284,7 @@ name = "standard-sunau"
 version = "3.13.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "audioop-lts" },
+    { name = "audioop-lts", marker = "python_full_version >= '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/66/e3/ce8d38cb2d70e05ffeddc28bb09bad77cfef979eb0a299c9117f7ed4e6a9/standard_sunau-3.13.0.tar.gz", hash = "sha256:b319a1ac95a09a2378a8442f403c66f4fd4b36616d6df6ae82b8e536ee790908", size = 9368, upload-time = "2024-10-30T16:01:41.626Z" }
 wheels = [
@@ -3556,10 +3574,10 @@ name = "typer"
 version = "0.24.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "annotated-doc" },
-    { name = "click" },
-    { name = "rich" },
-    { name = "shellingham" },
+    { name = "annotated-doc", marker = "python_full_version >= '3.13'" },
+    { name = "click", marker = "python_full_version >= '3.13'" },
+    { name = "rich", marker = "python_full_version >= '3.13'" },
+    { name = "shellingham", marker = "python_full_version >= '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f5/24/cb09efec5cc954f7f9b930bf8279447d24618bb6758d4f6adf2574c41780/typer-0.24.1.tar.gz", hash = "sha256:e39b4732d65fbdcde189ae76cf7cd48aeae72919dea1fdfc16593be016256b45", size = 118613, upload-time = "2026-02-21T16:54:40.609Z" }
 wheels = [

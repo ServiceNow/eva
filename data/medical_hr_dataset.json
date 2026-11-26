@@ -35,7 +35,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4829",
         "date_of_birth": "1987-09-14",
         "employee_id": "EMP126225",
@@ -1399,7 +1401,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4829",
         "date_of_birth": "1997-09-14",
         "employee_id": "EMP479580",
@@ -3357,7 +3361,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4829",
         "date_of_birth": "1991-09-03",
         "employee_id": "EMP921414",
@@ -4620,7 +4626,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1991-09-14",
         "employee_id": "EMP632496",
@@ -6514,7 +6522,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4829",
         "date_of_birth": "1988-11-22",
         "employee_id": "EMP391369",
@@ -7729,7 +7739,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-0184",
         "date_of_birth": "1998-11-22",
         "employee_id": "EMP496922",
@@ -9598,7 +9610,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1987-11-14",
         "employee_id": "EMP174441",
@@ -10950,7 +10964,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4829",
         "date_of_birth": "1998-11-22",
         "employee_id": "EMP201639",
@@ -12846,7 +12862,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-1842",
         "date_of_birth": "1984-11-22",
         "employee_id": "EMP380746",
@@ -14399,7 +14417,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1991-02-14",
         "employee_id": "EMP358607",
@@ -16291,7 +16311,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4827",
         "date_of_birth": "1991-02-14",
         "employee_id": "EMP908475",
@@ -17819,7 +17841,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4829",
         "phone_last_four": "4829",
         "date_of_birth": "1988-11-24",
@@ -19606,7 +19630,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1989-11-08",
         "employee_id": "EMP418897",
@@ -20994,7 +21020,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1991-11-08",
         "employee_id": "EMP790731",
@@ -23758,7 +23786,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1984-11-08",
         "employee_id": "EMP852470",
@@ -25629,7 +25659,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1994-02-11",
         "employee_id": "EMP343467",
@@ -28233,7 +28265,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1991-04-17",
         "employee_id": "EMP501124",
@@ -29623,7 +29657,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-0184",
         "date_of_birth": "1984-11-22",
         "employee_id": "EMP799287",
@@ -32296,7 +32332,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4829",
         "date_of_birth": "1988-11-02",
         "employee_id": "EMP998348",
@@ -34081,7 +34119,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1987-04-19",
         "employee_id": "EMP515922",
@@ -36429,7 +36469,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1992-04-11",
         "employee_id": "EMP824156",
@@ -37985,7 +38027,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1990-04-12",
         "employee_id": "EMP680238",
@@ -40445,7 +40489,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-2841",
         "date_of_birth": "1991-04-17",
         "employee_id": "EMP560485",
@@ -42069,7 +42115,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1991-11-08",
         "employee_id": "EMP436653",
@@ -44451,7 +44499,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4826",
         "date_of_birth": "1998-04-22",
         "employee_id": "EMP678043",
@@ -45966,7 +46016,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-2481",
         "date_of_birth": "1978-11-06",
         "employee_id": "EMP751051",
@@ -49304,7 +49356,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1988-11-04",
         "employee_id": "EMP937302",
@@ -51602,7 +51656,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1989-11-24",
         "employee_id": "EMP262246",
@@ -54681,7 +54737,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1987-11-22",
         "employee_id": "EMP586490",
@@ -56957,7 +57015,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "555-318-4826",
         "date_of_birth": "1992-04-08",
         "employee_id": "EMP235215",
@@ -60173,7 +60233,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4829",
         "date_of_birth": "1991-11-18",
         "employee_id": "EMP155843",
@@ -62547,7 +62609,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1998-02-14",
         "employee_id": "EMP405420",
@@ -65706,7 +65770,9 @@
       },
       "information_required": {
         "first_name": "<FIRST_NAME>",
+        "first_name_spelling_when_asked": "<FIRST_NAME_ROMANIZED>",
         "last_name": "<LAST_NAME>",
+        "last_name_spelling_when_asked": "<LAST_NAME_ROMANIZED>",
         "phone_number": "617-555-4821",
         "date_of_birth": "1991-11-14",
         "employee_id": "EMP274739",

@@ -78,6 +78,8 @@ The CASCADE pipeline exposes three optional latency levers. They are off or unse
 | `EVA_MODEL__LLM_STREAMING` | `true` / `false` | Stream LLM output to TTS sentence-by-sentence. |
 | `EVA_MODEL__PARALLEL_TOOL_CALLS` | unset / `true` / `false` | Forward the provider's `parallel_tool_calls` setting when tools are present. Leave unset for provider defaults; set `false` to match the ElevenAgents assistant config. |
 
+GPT-Live (`openai_live`) also has `EVA_MODEL__BACKCHANNELING` (`auto` default / `off`), which sets the backchannel policy line in the voice model's prompt. It is saved to `config.json` with the other model settings.
+
 Streaming still records one assistant audit entry per completed turn. If streaming is interrupted after speech starts, the spoken prefix is recorded so scored transcripts match emitted audio.
 
 ### Turn Detection Configurations

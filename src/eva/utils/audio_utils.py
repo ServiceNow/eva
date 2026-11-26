@@ -60,6 +60,54 @@ def mulaw_8k_to_pcm16_48k(mulaw_bytes: bytes) -> bytes:
     return pcm_48k
 
 
+class MulawStreamUpsampler:
+    """Stateful 8 kHz mu-law -> 16-bit PCM upsampler for *recording* tracks.
+
+    ``audioop.ratecv`` is linear interpolation (no anti-aliasing, so it leaves
+    spectral images that sound like static) and the helpers above restart it on
+    every 20 ms frame, adding a discontinuity at each frame boundary.
+
+    soxr's ``ResampleStream`` emits output in bursts (several frames of nothing,
+    then one big block), which can't give exact per-frame lengths. Instead each
+    call resamples ``[context | held-back samples | current frame]`` with
+    anti-aliased soxr and returns one frame's worth starting at the held-back
+    samples, so both filter edges fall in samples that are discarded. The last
+    ``_LOOKAHEAD_SAMPLES`` of each frame are held back for the next call, giving a
+    fixed 4 ms delay (the first call starts with 4 ms of silence).
+
+    Output is always exactly ``len(frame) * (to_rate // 8000)`` samples, keeping
+    the track positionally aligned with the assistant track. Each call is
+    microseconds of work on ~500 samples (soxr releases the GIL), so it is safe
+    on the event loop; do not batch it onto a thread.
+    """
+
+    _CONTEXT_SAMPLES = 64  # 8 kHz samples of history; well beyond the HQ filter's half-width
+    # 8 kHz samples of look-ahead (4 ms); error vs one-shot soxr is ~-63 dB, vs ~-27 dB with none.
+    _LOOKAHEAD_SAMPLES = 32
+
+    def __init__(self, to_rate: int) -> None:
+        if to_rate % 8000:
+            raise ValueError(f"to_rate must be an integer multiple of 8000, got {to_rate}")
+        self._to_rate = to_rate
+        self._ratio = to_rate // 8000
+        self._context = np.zeros(self._CONTEXT_SAMPLES, dtype=np.int16)
+        self._held = np.zeros(self._LOOKAHEAD_SAMPLES, dtype=np.int16)
+
+    def process(self, mulaw_bytes: bytes) -> bytes:
+        current = np.frombuffer(audioop.ulaw2lin(mulaw_bytes, 2), dtype=np.int16)
+        stream = np.concatenate((self._held, current))
+        window = np.concatenate((self._context, stream))
+        resampled = soxr.resample(window, 8000, self._to_rate, quality="HQ")
+        start = len(self._context) * self._ratio
+        expected = len(current) * self._ratio
+        out = resampled[start : start + expected]
+        if len(out) < expected:
+            out = np.pad(out, (0, expected - len(out)))
+        self._context = np.concatenate((self._context, stream[: len(current)]))[-self._CONTEXT_SAMPLES :]
+        self._held = stream[len(current) :]
+        return out.astype(np.int16).tobytes()
+
+
 def pcm16_24k_to_mulaw_8k(pcm_bytes: bytes) -> bytes:
     """Convert 24kHz 16-bit PCM to 8kHz mu-law.
 

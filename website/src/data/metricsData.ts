@@ -1,3 +1,5 @@
+import judgePrompts from 'virtual:judge-prompts';
+
 export type MetricType = 'deterministic' | 'llm_judge' | 'lalm_judge';
 export type MetricCategory = 'eva-a' | 'eva-x' | 'debug' | 'validation';
 
@@ -55,7 +57,7 @@ export const metrics: MetricDefinition[] = [
     badge: 'beta',
     category: 'eva-a',
     type: 'lalm_judge',
-    judgeModel: 'Gemini 3 Flash',
+    judgeModel: 'Gemini 3.8 Flash',
     judgeAccuracy: 0.8957,
     judgeScores: [
       { label: 'accuracy', value: 0.8957, std: 0.0258 },
@@ -71,81 +73,7 @@ export const metrics: MetricDefinition[] = [
     inputs: 'Agent audio recording, conversation trace (user utterances and tool responses as the source of entities to listen for; assistant turns are redacted to a placeholder)',
     outputRange: 'Binary per turn (0=low fidelity, 1=high fidelity), aggregated as mean across scored turns (turns with no entities are skipped)',
     passThreshold: '≥ 0.95',
-    judgePrompt: `You are an expert evaluator checking the **speech clarity and articulation** of entities spoken by an AI voice agent.
-
-You will receive:
-1. A conversation trace showing what the user said and what data the agent retrieved via tools. Assistant responses are redacted — you must listen to the audio to hear what the agent actually said.
-2. An audio recording of the agent's side of the conversation only (the user is not audible).
-
-## Conversation Trace
-{conversation_trace_formatted}
-
-## IMPORTANT: What This Metric Measures
-
-This metric measures **speech fidelity** — whether entities are clearly and correctly articulated in the audio. The conversation trace is provided so you know which entities to listen for, NOT so you can judge whether the agent gave the right answer.
-
-**This is NOT a faithfulness or correctness metric.** Do NOT evaluate:
-- Whether the agent used the right entity from a tool response (e.g., agent says "$315" but tool says $300 — this is a faithfulness issue, NOT a speech fidelity issue)
-- Whether the agent fabricated or hallucinated information not in the trace
-- Whether the agent omitted information it should have mentioned
-- Whether the agent's response is logical, helpful, or correct
-
-**What this metric DOES evaluate:**
-When the agent speaks an entity that appears in the conversation trace (user utterances or tool responses), is it **clearly articulated** in the audio? Specifically:
-- Can you clearly hear the entity as spoken?
-- Does the spoken form sound like the correct entity, or is it garbled, mispronounced, or distorted?
-- If the agent spells out a code letter by letter, is each letter/digit clearly distinguishable?
-- Did the agent communicate in the right language? The expected language is **{expected_language}** — if the audio is clearly spoken in a different language, set rating = 0 for that turn.
-
-## Entity Categories to Listen For
-- Confirmation codes (e.g., ZK3FFW, FAR0UM) — especially when spelled out letter by letter
-- Domain-specific record identifiers (e.g., flight numbers like SkyWay 410, ticket/incident numbers like INC-4821, employee IDs like EMP-092)
-- Dollar amounts (e.g., $15, $1,285.00) — "fifteen" vs "fifty" matters
-- Short alphanumeric codes (e.g., seat numbers like 21C, room codes like B-204, extension numbers like x4521)
-- Reference/voucher IDs (e.g., REF-8JVSDF-001) — verify each segment is distinguishable
-- Times (e.g., 3:55 PM, 10:30 AM)
-- Dates (e.g., March 25th, February 3rd)
-- Names (e.g., Mr. Rivera, Rodriguez)
-
-## Examples
-
-**High fidelity (rating = 1):**
-- Tool response contains confirmation code "YTM924". Agent says "Y T M nine two four" — each character is clearly audible. ✓
-- User says "last name Patel". Agent says "Patel" — clearly articulated. ✓
-- Tool response says fare is $300. Agent says "$315" — the amount is clearly spoken even though it doesn't match the tool response. This is a faithfulness issue, not a speech fidelity issue. Rate 1. ✓
-- Agent mentions "Dallas" which is not in the tool response — this is a hallucination, not a speech issue. Rate 1. ✓
-
-**Low fidelity (rating = 0):**
-- Tool response contains "YTM924". Agent tries to spell it out but audio sounds like "Y T N nine two four" — "M" sounds like "N". ✗
-- Agent says a dollar amount but the audio is garbled and you cannot tell if it's "fifty" or "fifteen". ✗
-- Agent spells a code but skips or slurs a letter so the spoken code has fewer characters than expected. ✗
-
-**What to ignore (does NOT cause rating = 0):**
-- Entities the agent mentions that are NOT in the conversation trace — do not evaluate these
-- Minor pronunciation variations that do not change identity (e.g., "Ms." vs "Miss")
-- Filler words, phrasing, word choice, sentence structure
-- Slight pacing or prosody differences
-
-## Rating Scale (per turn)
-- **1 (High Fidelity)**: Every entity from the conversation trace that the agent speaks in this turn is clearly and correctly articulated.
-- **0 (Low Fidelity)**: One or more entities from the conversation trace are garbled, mispronounced, or indistinguishable in the audio.
-
-If the assistant does not speak any entities from the conversation trace in a turn (e.g., a greeting, filler, or turn where it only mentions entities not in the trace), set \`has_entities\` to false. These turns are excluded from scoring.
-
-## Response Format
-Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the Conversation Trace above:
-{{
-  "turns": [
-    {{
-      "turn_id": <int: the turn number from the Conversation Trace>,
-      "language": "<string: the language spoken in this turn, e.g. English, French, Spanish>",
-      "transcript": <string: your transcription of the audio for this turn using the appropriate writing system for the language spoken, use only the audio for this not the conversation trace>,
-      "has_entities": <boolean: true if the assistant speaks entities from the conversation trace in this turn, false otherwise>,
-      "explanation": "<string: 1-3 sentence analysis in English listing which trace entities were spoken and whether they are clearly articulated>",
-      "rating": <0 or 1>
-    }}
-  ]
-}}`,
+    judgePrompt: judgePrompts.agent_speech_fidelity.user_prompt,
     developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/agent_speech_fidelity_development.md',
   },
   {
@@ -153,211 +81,22 @@ Respond with a JSON object. Each turn entry must include the turn_id matching th
     displayName: 'Faithfulness',
     category: 'eva-a',
     type: 'llm_judge',
-    judgeModel: 'Claude Opus 4.6',
-    judgeAccuracy: 0.7672,
+    judgeModel: 'GPT-5.2 (medium reasoning)',
+    judgeAccuracy: 0.7956,
     judgeScores: [
-      { label: 'accuracy', value: 0.8394, std: 0.0292 },
-      { label: 'macro_f1', value: 0.8065, std: 0.0286 },
+      { label: 'accuracy', value: 0.7956, std: 0.0126 },
+      { label: 'macro_f1', value: 0.7675, std: 0.0147 },
     ],
     judgeAlignment: {
       measure: "Quadratic-weighted Cohen's κ",
-      value: 0.836,
-      ci: [0.729, 0.915],
+      value: 0.711,
+      ci: [0.570, 0.820],
     },
-    description: 'Measures whether the agent\'s responses were consistent with its instructions, provided policy, user inputs, and tool call results. Evaluates across 5 dimensions: fabricating tool parameters, misrepresenting tool results, violating policies, failing to disambiguate, and hallucination.',
+    description: 'Measures whether the agent\'s responses were consistent with its instructions, provided policy, user inputs, and tool call results. Evaluates across 6 dimensions: fabricating tool parameters, misrepresenting tool results, violating policies, failing to disambiguate, hallucination, and wrong language (speaking a language other than the one in the agent instructions).',
     inputs: 'Agent role, agent instructions, available tools, current date/time, full conversation trace with tool calls',
     outputRange: '1-3 scale, normalized to 0-1 (1=unfaithful, 2=partially faithful, 3=fully faithful)',
     passThreshold: '≥ 0.5',
-    judgePrompt: `You are an expert evaluator analyzing whether a voice assistant remains faithful to information, policies, and instructions throughout a conversation. You will evaluate the conversation across five dimensions, each scored as a binary flag (true = issue present, false = no issue).
-
-Each dimension evaluates a **different type of faithfulness violation**. Every issue in the conversation maps to exactly one dimension \u2014 there is no overlap.
-
-## Agent Instructions
-{agent_instructions}
-
-## Agent Role
-{agent_role}
-
-## Available Tools
-{available_tools}
-
-## Current Date/Time
-{current_date_time}
-
-## Full Conversation with Tools
-{conversation_trace}
-
-## Evaluation Dimensions
-
-### 1. fabricating_tool_parameters
-**Scope: Tool call inputs only.** Did the assistant make a tool call with parameters that were not grounded in user-provided information or prior tool results?
-
-**IS a flag:**
-- Using a confirmation number, ID, or value that the user did not provide and no prior tool returned
-- Guessing or inventing parameter values instead of asking the user \u2014 including fabricated segment IDs and placeholder values like "?", "UNKNOWN", "MISSING", or "N/A"
-- Using a parameter value from a different context or conversation segment where it does not apply
-- Incorrectly categorizing data for enum/categorical tool parameters (e.g., voucher_reason, rebooking_type) when the categorization is not supported by the data (e.g., using "delay_over_4_hours" when the delay is 239 minutes, since 239 < 240)
-- A tool call parameter that cannot be traced to any user statement or prior tool result is a fabrication \u2014 even if the tool happens to return correct results
-- Hallucinated details in free-text tool fields (e.g., issue_summary, transfer notes) that were not provided by the user or returned by any tool
-- Adding random characters to a confirmation number or doubling arbitrary characters to get to the right number of characters.
-
-**Is NOT a flag:**
-- Using parameter values explicitly stated by the user
-- Using parameter values returned by a prior tool response (e.g., using a segment_id from get_reservation in a subsequent call)
-- Using reasonable defaults that are standard for the tool (e.g., a date format conversion)
-- Standard domain mappings from user-stated information (e.g., "Chicago O'Hare" \u2192 "ORD", "Miami" \u2192 "MIA") \u2014 unambiguous geographic or industry-standard mappings are considered grounded
-- Parameters grounded in policy entitlements derived from prior tool results (e.g., setting waive_change_fee=true when the passenger's elite status entitles them to a fee waiver per policy)
-- Reasonable contextual inferences for categorical parameters (e.g., using rebooking_type="same_day" when the user asks to move to a different flight on the same day)
-- Numeric values derived from prior tool results through simple arithmetic (e.g., summing ancillary fees from a reservation)
-- System-level or framework-generated tool calls made before the assistant has any user input, if the assistant subsequently asks for proper information
-
-**Before flagging a parameter as fabricated:** Verify it cannot be traced to ANY source \u2014 user statements, prior tool results, policy entitlements, simple arithmetic from known values, or standard domain mappings. Also verify enum values against the actual tool specification before claiming a value is invalid.
-
-**Mitigating factor:** If an ungrounded tool call fails harmlessly, the assistant immediately self-corrects, and no fabricated information reaches the user, this is still a flag but should be considered when computing the overall rating (see Rating Aggregation).
-
-### 2. misrepresenting_tool_result
-**Scope: How the assistant reports tool results to the user.** Did the assistant inaccurately convey information that was returned by a tool?
-
-**IS a flag:**
-- Stating incorrect values for fields that the tool response explicitly provided (e.g., wrong departure time, wrong fare amount, wrong seat number)
-- Contradicting what a tool response returned (e.g., saying a flight is on time when the tool showed a delay, stating "window seat" when tools show an aisle seat)
-- Omitting critical information from a tool result that changes the meaning (e.g., not mentioning a cancellation fee when the tool returned one and total_collected > $0)
-- Failing to disclose costs/fees shown in tool results that the user would need to make an informed decision (when total_collected > $0)
-- Arithmetic errors when computing values from tool data (e.g., incorrectly calculating fare differences, arrival times) \u2014 verify all math carefully before flagging or clearing
-
-**Is NOT a flag:**
-- Minor rounding or formatting differences that don't change the meaning (e.g., "$384.00" vs "$384")
-- Omitting non-essential details from a tool result while accurately conveying the key information
-- Paraphrasing tool results in conversational language while preserving accuracy
-- Failing to mention a fare difference or fee that was $0 or fully waived (total_collected = $0), when the financial outcome is accurately communicated
-- Filtering tool results based on user-stated constraints (e.g., showing only 4 of 5 flights when the 5th doesn't meet the user's arrival time requirement) \u2014 this is correct behavior, not misrepresentation
-- Reasonable inferences combining tool data with contextual information (e.g., inferring a flight has departed when scheduled departure is before current time and status shows no cancellation)
-- Time format conversions (e.g., 16:40 = 4:40 PM, 17:00 = 5:00 PM)
-
-**Verification requirements:** When checking the assistant's statements against tool results: (1) carefully compute fare differences as (new fare - original fare) + fees, not confusing total new fare with fare difference; (2) check time format conversions (24h \u2194 12h); (3) verify arithmetic independently before flagging a cost discrepancy; (4) cross-reference ALL relevant tool result fields, not just one.
-
-### 3. violating_policies
-**Scope: Agent instructions and policies only.** Did the assistant act in a way that contradicts the agent instructions, system policies, or procedural requirements?
-
-**IS a flag:**
-- Failing to follow explicit procedural steps outlined in agent instructions (e.g., skipping a required verification step)
-- Offering options or taking actions that the agent instructions explicitly prohibit
-- Not applying policies that are clearly applicable to the situation (e.g., not offering an entitled benefit, not following a required disclosure)
-- Stating a policy incorrectly, fabricating a policy not present in the instructions, or significantly changing a policy's meaning
-- **Temporal sequencing for consequential actions:** When instructions require "explain before acting" or "get explicit confirmation before proceeding," the assistant must pause for user confirmation BETWEEN read operations and write operations that have financial consequences or are irreversible. Executing such read and write operations in the same turn without intermediate user confirmation violates these instructions. Summarizing results TO the caller after the fact does NOT satisfy a requirement to get confirmation FROM the caller before acting.
-- **Irreversible write operations** (cancellations, rebookings, refunds) executed without required prior explanation of specific financial implications (fees, fare differences, credit amounts) and explicit user confirmation. A generic mention of potential fees without specifying amounts is insufficient when the amounts are knowable.
-
-**Is NOT a flag:**
-- Following reasonable interpretations of ambiguous instructions
-- Minor stylistic deviations from instructions that don't affect the outcome (e.g., slightly different wording for a required disclosure)
-- Actions not covered by any explicit policy or instruction
-- Adopting incorrect terminology from the user (e.g., wrong airline name) while processing the correct reservation, when it doesn't cause confusion or incorrect actions
-- Proactive issuance of no-cost benefits the customer is clearly entitled to (e.g., meal vouchers during IRROPS, compensation) without explicit confirmation \u2014 these are beneficial actions with no negative consequence, and the customer's entitlement or explicit request serves as sufficient basis
-- When a user explicitly requests a specific action AND the general cost structure has been communicated, proceeding without re-stating exact amounts (if not yet knowable) is not a clear violation
-
-**Evaluating "explain before acting":** This principle protects passengers from unexpected costs or negative consequences. Severity should be proportional to potential negative impact:
-- **Clear violation:** Executing irreversible actions without disclosing known specific fees/costs, especially when total_collected > $0
-- **Not a violation:** Issuing benefits the customer explicitly requested or is entitled to with no negative consequence. Mentioning an action should not have any financial consequence based on the policy before seeing it in the tool results is not a violation, as long as the assistant corrects itself after seeing the actual costs in the tool results (e.g., "There should be no fare difference based on IRROPS policy" \u2192 proceeds to call tool \u2192 if tool shows fare difference is waived, no violation.)
-
-**Evaluating policy application:** When two policy paths could apply (e.g., same-day change vs. missed flight), consider timeline carefully. If a flight hasn't departed yet and the passenger is within the policy window, applying the more favorable applicable policy is not a violation. Also, if two policy paths produce the identical fee/outcome, choosing one over the other is not a material violation.
-
-### 4. failing_to_disambiguate
-**Scope: Handling of ambiguous or contradictory information.** Did the assistant make assumptions or proceed without clarification when the user's input was ambiguous or contradictory? Since the assistant is working from a speech-to-text transcript, it should account for potential transcription errors, and clarify any ambiguity in the user's intent, especially when they lead to write/irreversible operations. It's not needed to clarify if the tools called are simple lookups, but if the lookups fail, the assistant is expected to clarify the user's intent.
-
-**IS a flag:**
-- Proceeding with an action when the user's request could reasonably refer to multiple options and the assistant did not ask which one
-- Making assumptions about user intent when the user provided contradictory information (e.g., user says two different dates)
-- Choosing between conflicting pieces of information without asking the user to clarify
-- Not clarifying errors that could be made in a transcript when they have an impact on the downstream conversation. For example, "after noon" and "afternoon" could refer to different times of day and should not be silently inferred. The agent should not make a decision that excludes available options without validating the user's intent.
-- When unable to retrieve some information, if the conversation contains multiple differing versions of a confirmation code or name, the assistant should actively disambiguate rather than silently defaulting to one version or the latest one. Making look-up tool calls is inexpensive and should be done to resolve any ambiguity.
-- Failing to consider possible transcription errors when a lookup fails for an uncommon name or alphanumeric code (e.g., not asking the user to spell it out or verify)
-- Not leveraging required information, such as specific confirmation number or names, that could be reasonably inferred from the conversation.
-
-**Is NOT a flag:**
-- Proceeding when the user's intent is clear and unambiguous
-- Asking a clarifying question when the user's request is ambiguous (this is correct behavior)
-- Making a reasonable inference when the context makes the intent obvious (e.g., user says "my flight" when they only have one flight)
-- Retrying a lookup with a corrected spelling after the user confirms or spells out the information \u2014 this is proper disambiguation behavior
-- Trying valid different combinations of names and confirmation codes when a lookup fails (e.g., swapping commonly confused letters like "v"/"z" or "b"/"d", reordering characters)
-
-### 5. hallucination
-**Scope: Information the assistant states to the user that has no source \u2014 not already covered by the preceding dimensions.** Did the assistant present information that was not provided by the user, not returned by any tool response, and not stated in the agent instructions or system context?
-
-**IS a flag:**
-- Stating facts, details, or numbers that do not appear in any tool response, user utterance, agent instruction, or system context (e.g., inventing a gate number, adding a benefit the passenger doesn't have)
-- Presenting fabricated policies, timelines, or conditions not found in any available source
-- Claiming the system can perform lookups or actions using identifiers not supported by any available tool (e.g., offering to look up a reservation by ticket number when the tool only accepts confirmation_number)
-- Misidentifying the airline/brand from the agent role (e.g., using a different airline name)
-
-**Is NOT a flag:**
-- Stating information that is directly inferable from tool results and/or system context (e.g., computing an arrival time from departure + duration, calculating an expiration date from current date + valid_months)
-- Referencing the current date/time from the system context \u2014 this is grounded information, NOT hallucination
-- Providing general conversational courtesies that don't assert factual claims
-- Hedged, commonsense caveats (e.g., "you may want to verify at the counter") that don't contradict tool results or policy \u2014 only flag fabricated information presented as definitive fact
-- General domain knowledge (e.g., standard check-in windows) that is reasonable and not contradicted by tool results
-
-**Critical verification step:** Before flagging hallucination, check ALL available sources: (1) all tool responses in the conversation, (2) user utterances, (3) agent instructions, (4) the Current Date/Time field and other system context metadata \u2014 do NOT assume these fields are empty without verifying. Information derived from system context (e.g., current date) is grounded, not hallucinated.
-
-**Disambiguation from other dimensions:**
-- If the assistant misquotes, distorts or embellish a tool result \u2192 flag under misrepresenting_tool_result (the source exists but was reported incorrectly)
-- If an unsupported capability is offered in passing \u2192 flag here; if actually attempted via fabricated tool call \u2192 flag under fabricating_tool_parameters
-- If the assistant states something with NO source at all \u2192 flag here
-
-You will focus only on the above dimensions. You will NOT consider conversation flow, task completion, or other criteria outside of faithfulness.
-
-## Rating Scale
-For all five dimensions, determine if there is evidence that one or more issues should be flagged and rate that dimension based on the following guidelines:
-
-- **3** (No faithfulness issues):
-  - No issue with this dimension
-
-- **2** (Minor or ambiguous faithfulness issues):
-  - A single isolated issue that does not materially affect the outcome (e.g., a minor misstatement that is quickly corrected, a single ungrounded tool parameter that doesn't affect results, a minor policy deviation that doesn't affect the customer's decision-making)
-  - Minor instruction-following deviations that do not materially affect the outcome (e.g., slight formatting differences, omitting low-importance optional steps)
-  - Borderline cases where it is unclear whether a faithfulness violation occurred due to ambiguous instructions, incomplete context, or reasonable interpretation differences
-  - Adopting incorrect terminology from the user (e.g., wrong airline name) while processing the correct reservation, when it doesn't cause confusion or incorrect actions
-  - If something appears as being borderline an issue, it should probably be rated 2.
-
-- **1** (Clear faithfulness violations):
-  - Any issue that materially affects the outcome \u2014 financial consequences, irreversible actions taken without informed consent, or incorrect information that could mislead the customer. Such as:
-    - Executing irreversible write operations (cancellations, rebookings, refunds) without required prior explanation of specific financial implications AND explicit user confirmation \u2014 especially when total_collected > $0
-    - Hallucinating information not present in tool results, especially financial figures (fares, fees, refund amounts) communicated to the user
-  - Any faithfulness issue that repeatedly prevents the conversation from progressing is also rated 1.
-
-For the final rating of the conversation, use the minimum rating across all dimensions as the overall faithfulness rating (i.e., if any dimension is rated 1, overall rating is 1; if all dimensions are 3, overall rating is 3; if there are no 1s but at least one 2, overall rating is 2).
-
-## Response Format
-Respond in JSON format:
-{{
-    "dimensions": {{
-        "fabricating_tool_parameters": {{
-            "evidence": "<string>",
-            "flagged": <bool: true if issue is present, false otherwise>,
-            "rating": <int: 1, 2, or 3>
-        }},
-        "misrepresenting_tool_result": {{
-            "evidence": "<string>",
-            "flagged": <bool: true if issue is present, false otherwise>,
-            "rating": <int: 1, 2, or 3>
-        }},
-        "violating_policies": {{
-            "evidence": "<string>",
-            "flagged": <bool: true if issue is present, false otherwise>,
-            "rating": <int: 1, 2, or 3>
-        }},
-        "failing_to_disambiguate": {{
-            "evidence": "<string>",
-            "flagged": <bool: true if issue is present, false otherwise>,
-            "rating": <int: 1, 2, or 3>
-        }},
-        "hallucination": {{
-            "evidence": "<string: 1-2 sentences citing specific examples from the transcript, or 'None' if not flagged>",
-            "flagged": <bool: true if issue is present, false otherwise>,
-            "rating": <int: 1, 2, or 3>
-        }}
-    }},
-    "rating": <int: 1, 2, or 3 - minimum rating across all dimensions>
-}}`,
+    judgePrompt: judgePrompts.faithfulness.user_prompt,
     developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/faithfulness_development.md',
   },
 
@@ -379,124 +118,21 @@ Respond in JSON format:
     category: 'eva-x',
     type: 'llm_judge',
     judgeModel: 'GPT-5.2',
-    judgeAccuracy: 0.9226,
+    judgeAccuracy: 0.9318,
     judgeScores: [
-      { label: 'accuracy', value: 0.9226, std: 0.0076 },
-      { label: 'macro_f1', value: 0.8375, std: 0.0112 },
+      { label: 'accuracy', value: 0.9318, std: 0.0012 },
+      { label: 'macro_f1', value: 0.8462, std: 0.0032 },
     ],
     judgeAlignment: {
       measure: "Quadratic-weighted Cohen's κ",
-      value: 0.823,
-      ci: [0.754, 0.874],
+      value: 0.751,
+      ci: [0.685, 0.803],
     },
     description: 'Measures whether the agent\'s responses were appropriately brief and focused for spoken delivery. In voice, users cannot skim, re-read, or scroll back \u2014 presenting too many options, asking multiple questions per turn, or including unnecessary hedging degrades the interaction.',
     inputs: 'Full conversation trace with all turns',
     outputRange: '1-3 per turn (1=verbose, 2=adequate, 3=concise), normalized to 0-1',
     passThreshold: '≥ 0.5',
-    judgePrompt: `You are an expert evaluator judging the conciseness and voice-appropriateness of assistant responses in a voice conversation.
-
-## Conversation
-{conversation_turns}
-
-## Understanding the Conversation Format
-
-The conversation is grouped by turn_id. Each turn may contain:
-- **user**: What the user said
-- **assistant**: What the assistant said (there may be multiple assistant entries within a single turn \u2014 e.g., the assistant speaks, calls a tool, then speaks again)
-- **tool_call**: A tool invocation made by the assistant
-- **tool_response**: The result returned by the tool
-
-When a turn contains multiple assistant entries, evaluate them **together as a single unit** \u2014 they represent the assistant's complete response within that turn. Tool calls and responses between assistant entries explain why the assistant spoke in multiple parts (it was waiting for data). It could also be due to interruptions from the user.
-
-## Understanding Interruption Tags
-
-The assistant text may contain metadata tags inserted during post-processing. These describe events that occurred during the live conversation. They are NOT spoken aloud.
-
-Tag definitions:
-\u2022 [assistant interrupts] \u2014 The assistant started speaking over the user. The assistant's text following this tag is what it said when it interrupted.
-\u2022 [likely cut off by user] \u2014 The user interrupted the assistant. Text BEFORE this tag may have been partially spoken or cut short. Text AFTER this tag is what the assistant said after resuming. Do not penalize the assistant for brevity or incomplete sentences near this tag \u2014 the assistant was cut off, not being concise by choice.
-\u2022 [speaker likely cut itself off] \u2014 The assistant stopped talking on its own (e.g., it detected the user was speaking). Words before this tag may not have been fully spoken. Do not penalize for incomplete content near this tag and do not penalize if the content is later repeated, given it may have been cut off.
-\u2022 [likely interruption] \u2014 An unexplained break in the assistant's speech. Content around this boundary may be fragmented.
-
-**Key principle:** When interruption tags are present, the assistant may not have been able to finish what it was saying. Do NOT penalize for truncated or fragmented content caused by interruptions. Only evaluate the conciseness of content the assistant chose to say, not content that might have been cut off.
-
-## Instructions
-The conversation includes user, assistant, tool_call, and tool_response entries. Rate only the assistant's spoken content. User turns, tool calls, and tool responses are provided for context only.
-
-For each turn that contains assistant content, evaluate whether the assistant's response is appropriately concise and easy to digest when spoken aloud to a human.
-
-The assistant is expected to follow conversational voice guidelines:
-- Keep responses brief and conversational (typically 2\u20134 sentences)
-- Summarize long lists rather than reading them exhaustively
-- Avoid overwhelming the listener with too much information at once
-- Spread multiple requests across turns when possible
-- Present options conversationally and avoid cramming excessive detail into one turn
-
-## Evaluation Criteria
-When evaluating each turn, consider:
-- Does the response get to the point without filler, rambling, or unnecessary content?
-- Is all the information relevant and necessary given the conversation context?
-- Is the amount of detail reasonable for someone listening to \u2014 not reading \u2014 the response?
-- If the response enumerates options or items (e.g., "Option one is\u2026 Option two is\u2026"), does the structure help the user? The volume should not be overwhelming.
-- Is the provided information justified by context (e.g., confirming a detail the user may have misheard)? Or is it inappropriate (e.g., excessive itemization or explanation when the user may only care about the end result)?
-- Within turns, is repetition avoided? Across turns there may be valid reasons for repetition, but it should usually not occur within a single turn.
-- Essential information \u2014 such as confirmation codes, voucher numbers, reference IDs, or specific details the user needs \u2014 should never be penalized, regardless of length.
-
-## Allowed Exceptions (Voice Interaction Realities)
-The assistant may occasionally produce longer turns when the context requires precise information transfer. The following cases should NOT be penalized for verbosity or information density. The turn itself may still be penalized for other reasons.
-1. **Phonetic Confirmation of Codes**
-  - When confirming a confirmation code, booking reference, voucher code, or similar identifier, the assistant may spell characters using the NATO phonetic alphabet (e.g., "B as in Bravo, F as in Foxtrot").
-  - This is especially appropriate when the user previously misheard or asked for clarification.
-2. **Voucher or Reference Code Delivery**
-  - When providing meal voucher codes, hotel voucher codes, travel credit codes etc the assistant may read the whole code out loud.
-  - This information is essential and should not be penalized regardless of length.
-3. **End-of-Call Wrap-Up**
-  - The final assistant turn in a conversation may include a slightly longer recap or confirmation of next steps (e.g., summarizing booking details, confirming vouchers sent, thanking the user).
-  - Minor additional detail in this final wrap-up should not be penalized unless it becomes excessively long or introduces unrelated information.
-
-Important principle: Information given in assistant turns must be short enough for an average person to easily follow in real-time conversation and retain in working memory.
-
-## Failure Modes
-When a response is not optimally concise, identify which of the following failure modes are present. A turn may have multiple failure modes.
-
-**verbosity_or_filler**
-Contains unnecessary wording, repetition within the same turn, hedging, or explanation beyond what the context requires.
-
-**excess_information_density**
-Presents too many distinct facts, options, numbers, steps, or requests at once, making it difficult for a listener to process in real time. Note: bundling closely related transactional details that the user needs to act on or remember together (e.g., confirming a flight number, departure time, and seat in one turn) is expected behavior \u2014 only flag this when the volume of information genuinely exceeds what a listener can comfortably retain.
-
-**over_enumeration_or_list_exhaustion**
-Reads out long lists instead of summarizing, or presents multiple options with excessive detail rather than inviting follow-up.
-
-**contextually_disproportionate_detail**
-Provides more background, clarification, or explanation than the situation warrants.
-
-## Contextual Leniency and Failure Mode Priority
-Conciseness should be evaluated with respect to the conversational context. If additional wording or detail is clearly necessary for the user to understand or act on the information, a modest increase in verbosity should be considered acceptable and should NOT be penalized.
-
-If none of the above are present, return an empty list for failure_modes.
-
-## Rating Scale For Each Turn With Assistant Content
-- 3 (Highly Concise / No Cognitive Overload) \u2013 The response is clear, appropriately scoped for voice, and comfortably digestible in real time. No failure modes are present. A turn that delivers a few closely related facts as part of a single transactional step (e.g., confirming booking details) still qualifies as 3 if the listener can comfortably absorb it in one pass.
-- 2 (Adequate but Not Optimally Concise) \u2013 One minor failure mode is present, but the response remains reasonably processable in a voice setting and does not meaningfully overwhelm the listener. Reserve this rating for turns where you can identify specific content that should have been omitted or deferred to a later turn \u2014 not merely for turns that happen to contain several necessary details.
-- 1 (Not Concise / Causes Cognitive Overload) \u2013 One or more significant failure modes are present that materially increase cognitive load and would hinder comprehension in a voice conversation.
-
-Provide one entry per turn_id in the conversation.
-
-## Response Format
-Provide your response as a valid JSON array, one entry per turn. Each entry must include the turn_id matching the turn number shown in the conversation above.
-- If the turn contains assistant content, rate it with 1, 2, or 3.
-- If the turn does not contain assistant content (e.g., user-only turn), set rating to null.
-[
-  {{
-    "turn_id": <int: the turn number from the conversation>,
-    "explanation": "<Detailed analysis referencing the evaluation criteria and explicitly linking identified weaknesses to the listed failure modes to justify the selected rating (1\u20133). Empty string if rating is null.>",
-    "failure_modes": ["<failure_mode_1>", "<failure_mode_2>", ...],
-    "rating": <int: 1, 2, or 3, or null if no assistant content>
-  }}
-]
-
-If the turn is rated 3 or null, failure_modes must be an empty list: [].`,
+    judgePrompt: judgePrompts.conciseness.user_prompt,
     developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/conciseness_development.md',
   },
   {
@@ -505,176 +141,21 @@ If the turn is rated 3 or null, failure_modes must be an empty list: [].`,
     category: 'eva-x',
     type: 'llm_judge',
     judgeModel: 'GPT-5.2',
-    judgeAccuracy: 0.799,
+    judgeAccuracy: 0.7549,
     judgeScores: [
-      { label: 'accuracy', value: 0.799, std: 0.0112 },
-      { label: 'macro_f1', value: 0.7817, std: 0.0128 },
+      { label: 'accuracy', value: 0.7549, std: 0.0236 },
+      { label: 'macro_f1', value: 0.7339, std: 0.0209 },
     ],
     judgeAlignment: {
       measure: "Quadratic-weighted Cohen's κ",
-      value: 0.845,
-      ci: [0.753, 0.911],
+      value: 0.665,
+      ci: [0.527, 0.775],
     },
     description: 'Measures whether the agent moved the conversation forward effectively \u2014 avoiding unnecessary repetition, retaining context across turns, and driving toward task completion without stalling.',
     inputs: 'Full conversation trace',
     outputRange: '1-3 (1=clear progression issues, 2=minor issues, 3=smooth progression), normalized to 0-1',
     passThreshold: '≥ 0.5',
-    judgePrompt: `You are an expert evaluator analyzing whether a voice assistant effectively moved a conversation forward. You will evaluate the conversation across four dimensions, each scored as a binary flag (true = issue present, false = no issue).
-
-Each dimension evaluates a **different type of action**. Every issue in the conversation maps to exactly one dimension \u2014 there is no overlap.
-Ensure to consider both the assistant agent instructions and the following agent dimensions when evaluating the conversation.
-
-**IMPORTANT \u2014 Scope boundary with faithfulness:** This metric evaluates whether the conversation moved forward efficiently. It does NOT evaluate whether the assistant followed policies, complied with user constraints, or acted faithfully to its instructions \u2014 those are faithfulness concerns.
-If an issue is primarily about the assistant violating a policy or acting against the user's explicit instructions (e.g., rebooking when the user said not to, not disclosing fees), do NOT flag it here even if it also affected conversation flow. Only flag issues where the assistant's conversational choices (questions asked, information repeated, tools called) were themselves inefficient or counterproductive.
-
-**IMPORTANT \u2014 Voice conversation context:** This is a voice (spoken) conversation, which means speech recognition errors are common.
-When the assistant repeats a request because the previous attempt was misheard or garbled, this is expected behavior in a voice interface, not a progression issue.
-
-**IMPORTANT \u2014 Interruption tags:** The transcript may contain inline tags indicating speech overlap. These are informational metadata about the voice interaction \u2014 they are NOT conversation progression issues by themselves:
-- \`[assistant interrupts]\` \u2014 The agent started speaking while the user was still talking.
-- \`[user interrupts]\` \u2014 The user interrupted the agent.
-- \`[likely cut off by user]\` \u2014 The agent's speech was probably cut off by the user. Text before this tag may not have been fully heard.
-- \`[agent likely cut itself off]\` \u2014 The agent stopped talking on its own after detecting overlap. Text before this tag was probably not all said.
-- \`[likely interruption]\` \u2014 Catch-all for unexplained breaks in assistant speech.
-- \`[assistant starts replying - user interrupts]\` \u2014 The agent began replying but the user interrupted.
-
-When evaluating, treat these tags as natural voice interaction phenomena. Do NOT penalize interruptions themselves. Only flag an issue if the interruption caused observable consequences (e.g., information loss because the agent's cut-off speech contained critical details that were never restated, or unnecessary repetition because the agent repeated already-heard information after being interrupted).
-
-## Full Conversation with Tools
-{conversation_trace}
-
-## Evaluation Dimensions
-
-### 1. unnecessary_tool_calls
-**Scope: Tool call actions only.** Were any tool calls unjustified \u2014 repeated without reason, made without required information, or made for data already available?
-
-**IS a flag:**
-- Calling the same tool with the same parameters after a prior successful response (no new user input or error in between)
-- Calling a tool with empty or missing required parameters, causing a predictable error (e.g., \`get_reservation\` with empty strings before asking the user)
-- Calling a tool when the needed information was already returned by a previous tool response
-- Calling a tool to verify something a prior tool response already confirmed
-
-**Is NOT a flag:**
-- Retrying a tool call after a tool error with corrected parameters
-- Calling the same tool with different parameters (e.g., different flight numbers)
-- Sequential tool calls that each return new, necessary information (e.g., get_reservation \u2192 get_flight_status \u2192 get_disruption_info)
-- A tool call that fails unexpectedly (the assistant could not have predicted the failure)
-- Tool calls that are necessary for the task but were executed prematurely (e.g., before the user confirmed) \u2014 premature execution is a faithfulness/policy compliance issue, not a conversation progression issue
-- Tool calls that follow standard agent instructions (e.g., automatically carrying over seat assignments or baggage when rebooking) even if the user did not explicitly request those specific actions
-
-**CAVEAT: If the model makes 3 or more unnecessary tool calls, this dimension should be rated 1.**
-
-### 2. information_loss
-**Scope: The assistant's memory of established facts.** Did the assistant fail to retain or act on information already established in the conversation \u2014 whether from the user's statements or from prior tool responses?
-
-This dimension is about the assistant **forgetting or ignoring known facts**, regardless of how that failure manifests (re-asking, wrong assumptions, ignoring constraints).
-
-**IS a flag:**
-- Re-asking the user for information they already provided (e.g., asking for the confirmation number after the user stated it and it was used successfully). Note: if the assistant says "could you repeat your confirmation code?" and the transcript shows the user already clearly provided it (no speech recognition garbling), this IS information_loss \u2014 the assistant failed to retain established facts.
-- Ignoring a constraint the user explicitly stated (e.g., user said "no rebooking" but assistant asks about rebooking options or asked for specific details before a booking should be made)
-- Failing to use relevant data from a prior tool response when it was needed for the next step (e.g., not using the flight number from get_reservation when calling get_flight_status)
-
-**Is NOT a flag:**
-- Asking for information the user has not yet provided
-- Asking a clarifying question about genuinely ambiguous information
-- Asking for authentication details (confirmation number, last name) at the start of the conversation
-- The assistant acting on information that contradicts what the user said, when the contradiction is due to a faithfulness or policy violation \u2014 flag that under faithfulness, not here. Only flag here if the assistant demonstrably forgot or ignored previously established facts within the conversation flow.
-
-**Disambiguation from other dimensions:**
-- If the assistant re-asks for user-provided info \u2192 flag here (not redundant_statements)
-- If the assistant makes an unnecessary tool call because it forgot a prior result \u2192 flag under unnecessary_tool_calls (the tool action is the observable problem)
-- If the assistant proceeds with an action that contradicts the user's stated preference (e.g., rebooking instead of standby) \u2192 this is a faithfulness violation, not information_loss. Only flag here if the assistant clearly forgot the user's input, not if it chose to override it.
-
-### 3. redundant_statements
-**Scope: The assistant repeating its own previous output.** Did the assistant restate information it had already communicated to the user?
-
-This dimension ONLY covers the assistant repeating **its own prior utterances** \u2014 not forgetting user input (that is information_loss) and not tool call issues (that is unnecessary_tool_calls).
-
-**IS a flag:**
-- Restating flight details, times, or gate information the assistant already told the user in an earlier turn (outside of a final recap) when the user did not ask for it
-- Repeating the same explanation or instruction in multiple turns when the user has acknowledged and moved on
-
-**Is NOT a flag:**
-- A single brief recap or summary at the very end of the conversation as a closing confirmation (this is helpful, not redundant). However, if the assistant provides multiple recaps across different turns, only the final one is exempt \u2014 earlier recaps that restate already-communicated information are still flagged.
-- Confirming back details to the user once for verification (e.g., reading back a confirmation number the user just provided)
-- Stating information for the first time, even if it was available from a tool response earlier
-- Repeating information in direct response to the user explicitly requesting confirmation or asking to hear it again (the user must clearly ask \u2014 simply continuing the conversation is not a request for repetition)
-- Re-explaining a policy or constraint when the user continues to challenge, dispute, or insist against it \u2014 the assistant must reiterate its position in these cases and should not be penalized for doing so. However, if the assistant repeats the exact same explanation verbatim across multiple turns, flag it \u2014 the assistant should vary its phrasing.
-- Repeating a request for information (e.g., confirmation code, spelling) when speech recognition or transcription errors clearly caused the previous attempt to fail (e.g., garbled text, partial characters, obvious mishearing visible in the transcript). Do NOT apply this exception when the transcript shows no evidence of ASR failure \u2014 the assistant re-asking without cause is still a flag.
-
-### 4. question_quality
-**Scope: The quality and appropriateness of the assistant's questions, where the issue is NOT caused by forgetting information (that is information_loss).** Did the assistant ask poorly formed questions or fail to ask a necessary clarifying question?
-
-**IS a flag:**
-- Asking an overly broad or vague question when the assistant had enough information to take action (e.g., "What would you like to do?" when the user already stated a clear goal that the assistant remembers but chose not to act on)
-- Asking multiple questions at once when a single tool call could have resolved the need
-- Failing to ask for clarification when the user's request was genuinely ambiguous, and instead proceeding with assumptions
-- Failing to ask for clarification when there are multiple options that meet the users requirements
-- Failing to ask for required information before taking an action (e.g., not asking for required details for a tool call before making the tool call, when those details have not been made available through a previous tool call, or inputs from the user)
-- Failing to provide necessary information for the user to make a decision (e.g not providing clear information about the details of the options available to the user)
-- Taking an irreversible action (rebooking, cancellation) without first confirming when user input is ambiguous or contradicts system data (e.g., user claims a 4-hour delay but system shows 45 minutes \u2014 assistant should clarify before acting)
-
-**Is NOT a flag:**
-- Asking for required authentication information (confirmation number, last name)
-- Asking a clarifying question when the user's intent is genuinely ambiguous
-- Asking a follow-up question based on new information from a tool response
-- Not disclosing fees, fare differences, or other policy-required details before taking an action \u2014 policy compliance (e.g., whether the assistant explained costs before rebooking) is a faithfulness concern, not a conversation progression issue. This dimension only evaluates whether the assistant's questions and information-sharing effectively moved the conversation forward.
-- Referencing information that exists in the agent instructions (e.g., standard fees, policies) without verifying it via a tool call \u2014 the agent is expected to know its own instructions. Only flag if the information was genuinely unknown and required a tool call or user input.
-
-**Disambiguation from information_loss:**
-- If the assistant asks "What would you like to do?" because it FORGOT the user already stated their goal \u2192 flag under information_loss
-- If the assistant asks "What would you like to do?" when the user's goal is clear and remembered but the assistant chose a vague question over taking action \u2192 flag here
-
-## Rating Scale
-For all four dimensions, determine if there is evidence that one or more issues should be flagged and rate that dimension based on the following guidelines:
-
-- **3** (No progression issue):
-  - No issue with this dimension
-
-- **2** (Minor progression issue):
-  - A single isolated issue that does not significantly impact the conversation flow (e.g., one unnecessary tool call that didn't slow things down, a single redundant restatement, one vague question)
-  - A borderline case where it is unclear whether the issue constitutes a real progression problem
-
-- **1** (Clear progression issue):
-  - Multiple instances of the same type of issue in this dimension
-  - A single severe issue that clearly derailed or stalled the conversation (e.g., ignoring a stated constraint or user requirement before carrying out a write operation, failing to ask for required information before taking action, asking an overly vague question when the user's goal was clear, making an overly vague assumption not supported by user inputs/conversation history when multiple options exist)
-
-## Overall Rating
-The final rating considers BOTH the severity within each dimension AND the total number of flagged dimensions:
-
-- **3**: No dimension is flagged (all dimensions rated 3)
-- **2**: One or two dimensions are flagged at rating 2 (minor), AND no dimension is rated 1
-- **1**: Any of the following:
-  - Any dimension is rated 1 (clear issue within a single dimension)
-  - Three or more dimensions are flagged (even if each is individually minor, widespread issues across many areas constitute a clear overall progression problem)
-
-## Response Format
-Respond in JSON format. The "evidence" field must ALWAYS contain 1-2 sentences referencing specific parts of the transcript, even when flagged is false. When not flagged, briefly explain why no issue was found.
-{{
-    "dimensions": {{
-        "unnecessary_tool_calls": {{
-           "evidence": "<string: REQUIRED \u2014 cite transcript examples if flagged, or explain why clean if not>",
-           "flagged": <bool: true if issue is present, false otherwise>,
-           "rating": <int: 1, 2, or 3>
-        }},
-        "information_loss": {{
-            "evidence": "<string: REQUIRED>",
-            "flagged": <bool: true if issue is present, false otherwise>,
-            "rating": <int: 1, 2, or 3>
-        }},
-        "redundant_statements": {{
-            "evidence": "<string: REQUIRED>",
-            "flagged": <bool: true if issue is present, false otherwise>,
-            "rating": <int: 1, 2, or 3>
-        }},
-        "question_quality": {{
-            "evidence": "<string: REQUIRED>",
-            "flagged": <bool: true if issue is present, false otherwise>,
-            "rating": <int: 1, 2, or 3>
-        }}
-    }},
-    "rating": <int: 1, 2, or 3>
-}}`,
+    judgePrompt: judgePrompts.conversation_progression.user_prompt,
     developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/conversation_progression_development.md',
   },
 
@@ -693,168 +174,7 @@ Respond in JSON format. The "evidence" field must ALWAYS contain 1-2 sentences r
     description: 'Evaluates whether the agent correctly transcribed key named entities from user speech \u2014 confirmation codes, names, flight numbers, dates, and similar entities where transcription errors are conversation-ending rather than merely cosmetic.',
     inputs: 'User intended speech text (what TTS was asked to say), agent\'s transcription of user speech',
     outputRange: 'Ratio 0-1 (proportion of correctly transcribed entities across all turns)',
-    judgePrompt: `You are an expert evaluator analyzing Speech-to-Text (STT) transcription accuracy for key entities across an entire conversation.
-
-Your task:
-1. For EACH user turn, identify all key entities in the EXPECTED text
-2. Check if each entity appears CORRECTLY in the TRANSCRIBED text
-3. Mark each entity as correct or incorrect
-4. For entities in regions that were likely never spoken aloud (as indicated by interruption tags), still include them in the output but mark them as skipped
-
-## What Counts as an Entity
-An entity must have a **specific, concrete value** \u2014 something that could be passed as an input to a program or tool (not an AI, but a script or database lookup). Ask yourself: could this value be stored in a variable and used programmatically?
-
-- Names (people, places, organizations): e.g. "John Smith", "Austin", "Delta Airlines"
-- Specific dates and times: e.g. "December 15th", "3:45 PM" \u2014 NOT vague references like "tomorrow morning" or "later today"
-- Confirmation codes / reference numbers: e.g. "ABC123", "ZK3FFW"
-- Flight numbers: e.g. "UA 204"
-- Amounts and prices: use the specific value only, e.g. "$120" \u2014 for qualifier phrases like "under $120", only use the specific value
-- Addresses: e.g. "123 Main Street"
-- Phone numbers: e.g. "555-867-5309"
-- Email addresses: e.g. "john@example.com"
-- Other specific identifiers: seat numbers, loyalty numbers, booking IDs, etc.
-
-**Not an entity:** vague temporal words ("tomorrow", "next week", "morning"), general descriptors ("the cheap flight", "a long trip"), or open-ended qualifiers ("less than an hour", "around noon").
-
-## Understanding Tags in the Expected Text
-
-The expected text may contain non-spoken tags and markers. These are metadata \u2014 they were never said aloud and must not be treated as entities or evaluated.
-
-### Audio-Direction Tags
-Tags like [slow], [firm], [annoyed] describe how the words were meant to be spoken. Ignore them entirely.
-
-### Interruption Tags
-These markers indicate that parts of the expected text may never have been spoken aloud, because the user was interrupted or talked over. An entity that was never spoken cannot be correctly transcribed, so you must NOT penalize for entities in regions that were likely not said, instead mark them as skipped.
-\u2022 [assistant interrupts] \u2014 The agent started speaking over the user. Text after this tag may have been partially or fully drowned out by the agent. Entities after this tag may be missing or garbled in the transcription \u2014 do not penalize.
-\u2022 [assistant starts replying - user interrupts] \u2014 The agent began replying mid-turn, then the user interrupted the agent to continue speaking. Speech around this boundary may be garbled or missing. Entities near this tag should be evaluated with caution \u2014 if missing from transcription, do not penalize.
-
-**Key principle:** Only evaluate entities that were reasonably expected to have been spoken aloud. If a tag indicates the user was interrupted or talked over before or during an entity, still include the entity in your output but set \`skipped: true\` and explain why in the analysis. The \`correct\` field should reflect your best assessment of whether the transcription matched, but skipped entities will be excluded from accuracy metrics downstream.
-
-## User Turns to Evaluate
-{user_turns}
-
-## Correctness Criteria
-- Entity must be present (not missing) \u2014 unless in a region flagged by interruption tags
-- Entity value must match (minor formatting variations OK)
-- Numbers: "150" and "one hundred fifty" are equivalent
-- Dates: "December 15th" and "Dec 15" are equivalent
-- Names: Case-insensitive exact match required
-
-Important note: The expected text will often feature things formatted like "one two three" instead of "123". Your goal is to evaluate the semantic equivalence, meaning these are considered equivalent if they were heard in audio.
-
-## Examples
-
-**Example Input:**
-Turn 1:
-Expected: \`My confirmation is A B C one two three on December 15th.\`
-Transcribed: \`My confirmation is ABC123 on December 15th.\`
-
-Turn 2:
-Expected: \`Transfer one hundred fifty to account 1 2 3 4 5.\`
-Transcribed: \`Transfer $115 to account 12345.\`
-
-Turn 3:
-Expected: \`[slow] The code is X X F six O H, with the letter O, [assistant interrupts] not zero.\`
-Transcribed: \`The code is X... X F 6 O H with the letter O.\`
-
-Turn 4:
-Expected: \`My phone number is four zero four five five five [assistant interrupts] zero eight five six.\`
-Transcribed: \`My phone number is 404-555.\`
-
-**Example Response:**
-[
-{{
-    "turn_id": 1,
-    "entities": [
-    {{
-        "type": "confirmation_code",
-        "value": "A B C one two three",
-        "transcribed_value": "ABC123",
-        "analysis": "Matches exactly",
-        "correct": true,
-        "skipped": false
-    }},
-    {{
-        "type": "date",
-        "value": "December 15th",
-        "transcribed_value": "December 15th",
-        "analysis": "Matches exactly",
-        "correct": true,
-        "skipped": false
-    }}
-    ],
-    "summary": "All 2 key entities transcribed correctly."
-}},
-{{
-    "turn_id": 2,
-    "entities": [
-    {{
-        "type": "amount",
-        "value": "one hundred fifty",
-        "transcribed_value": "$115",
-        "analysis": "Amount wrong: $150 vs $115",
-        "correct": false,
-        "skipped": false
-    }},
-    {{
-        "type": "account_number",
-        "value": "1 2 3 4 5",
-        "transcribed_value": "12345",
-        "analysis": "Matches exactly",
-        "correct": true,
-        "skipped": false
-    }}
-    ],
-    "summary": "1 out of 2 entities correct. Amount error."
-}},
-{{
-    "turn_id": 3,
-    "entities": [
-    {{
-        "type": "confirmation_code",
-        "value": "X X F six O H",
-        "transcribed_value": "X F 6 O H",
-        "analysis": "Missing one X \u2014 transcribed 5 characters instead of 6. The code appears before the [assistant interrupts] tag so it is evaluated normally.",
-        "correct": false,
-        "skipped": false
-    }}
-    ],
-    "summary": "1 entity found before interruption, partially incorrect (missing one X). No entities after [assistant interrupts] tag to skip."
-}},
-{{
-    "turn_id": 4,
-    "entities": [
-    {{
-        "type": "phone_number",
-        "value": "four zero four five five five zero eight five six",
-        "transcribed_value": "404-555",
-        "analysis": "The full number is 404-555-0856. The [assistant interrupts] tag appears after 'five five five', meaning the last four digits ('zero eight five six') were likely drowned out by the agent speaking over the user. The transcription captured the portion before the interruption. Skipping because the entity spans into the interrupted region and cannot be fully evaluated.",
-        "correct": false,
-        "skipped": true
-    }}
-    ],
-    "summary": "1 entity found. Phone number spans into interrupted region \u2014 skipped. Partial transcription (404-555) matches the portion before the interruption."
-}}
-]
-
-## Response Format
- Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the User Turns to Evaluate section above:
-[
-{{
-    "turn_id": <int: the turn number from the User Turns to Evaluate section>,
-    "entities": [
-    {{
-        "type": "<name|date|time|confirmation_code|flight_number|amount|address|phone|email|etc...>",
-        "value": "<entity value from expected text>",
-        "transcribed_value": "<how it appeared or 'missing'>",
-        "analysis": "<brief reason; if skipped, explain why the entity falls in an interrupted region>",
-        "correct": <true|false>,
-        "skipped": <true|false>
-    }}
-    ],
-    "summary": "<1-2 sentence summary for this turn>"
-}}
-]`,
+    judgePrompt: judgePrompts.transcription_accuracy_key_entities.user_prompt,
     developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/metric_development/transcription_accuracy_key_entities.md',
   },
   {
@@ -862,7 +182,7 @@ Transcribed: \`My phone number is 404-555.\`
     displayName: 'TTS Fidelity',
     category: 'debug',
     type: 'lalm_judge',
-    judgeModel: 'Gemini 3 Flash',
+    judgeModel: 'Gemini 3.8 Flash',
     judgeAccuracy: 0.8957,
     judgeScores: [
       { label: 'accuracy', value: 0.8957, std: 0.0258 },
@@ -877,101 +197,7 @@ Transcribed: \`My phone number is 404-555.\`
     description: 'Measures whether the agent correctly spoke the information it intended to communicate. TTS systems can mispronounce, skip, or distort words \u2014 in a voice context, if a confirmation code is not spoken correctly, the user cannot act on it regardless of whether the LLM produced the right answer.',
     inputs: 'Agent audio recording, intended assistant text (what LLM generated)',
     outputRange: 'Binary per turn (0=low fidelity, 1=high fidelity), aggregated as mean across turns',
-    judgePrompt: `You are an expert evaluator judging the fidelity of this audio file against the intended text. 
-You will listen to one audio clip and verify that the spoken content faithfully reproduces the intended text, with special attention to TTS-critical entities.
-The audio provided is a recording of the agent's side of a conversation, and contains only the agent responses, not the user.
-
-## Intended Turns
-{intended_turns_formatted}
-
-## IMPORTANT: Comparison Rules
-
-Your task is to compare the **exact intended text** word-for-word against what you hear in the audio. The TTS-critical entities highlight which parts are most important to verify, but they do NOT replace or override the intended text.
-
-## Understanding the Intended Text
-
-The intended text may contain non-spoken tags and markers. You must understand these to evaluate fairly.
-
-### Audio-Direction Tags
-Tags like [slow], [firm], [annoyed] describe how the words were meant to be spoken. They are NOT spoken aloud and should never be expected in the audio.
-
-### Interruption Tags
-{interruption_tags_reference}
-
-The tags tell you that certain portions of the intended text were likely never spoken, because the speaker was interrupted or cut themselves off. Do NOT penalize for missing words that fall in a region the tags indicate was not spoken.
-
-**Key principle:** If a tag indicates that a section of text was likely not spoken aloud (due to interruption or cut-off), do NOT penalize for those words being missing from the audio — **including entity words** (confirmation codes, dollar amounts, names, etc.). A turn where the only missing content falls inside a cut-off region is rating = 1, even if that missing content contains critical entities.
-
-## Evaluation Criteria
-
-For each intended turn, compare what you hear in the audio against the intended text. Focus especially on **TTS-critical entities** listed for each turn.
-
-**Entity categories to watch:**
-- Confirmation codes (e.g., ZK3FFW, FAR0UM, 8JVSDF)
-- Domain-specific identifiers (e.g., flight numbers like "SkyWay 410", ticket or incident numbers, order numbers, case IDs)
-- Dollar amounts (e.g., $15, $1,285.00)
-- Short alphanumeric codes (e.g., seat numbers like "21C", room numbers, extension numbers)
-- Spelled-out codes (e.g., "Z K three F F W") — verify EVERY letter and digit individually; "K O L T S F" vs "K O L T S S F" is an error
-- Reference IDs with segments (e.g., REF-8JVSDF-001,  MEAL-FAR0UM-PAX0) — verify each segment; "M E L" vs "M E A L" is an error
-- Times (e.g., 3:55 PM, 10:30 AM)
-- Dates (e.g., March 25th, February 3rd)
-- Names (e.g., Mr. Rivera, Rodriguez)
-
-**What constitutes an error (rating = 0):**
-- Any entity spoken incorrectly (wrong digits, letters, amounts, numbers)
-- Missing words that change the meaning or omit an entity
-- Added words that introduce a factually incorrect entity
-- Substituted words that alter an entity value
-- Audio spoken in the wrong language (We expect audio in {expected_language})
-
-**What to ignore (does NOT cause rating = 0):**
-- Minor pronunciation variations that do not change the identity of an entity (e.g., "Ms." vs "Miss", "Mr." vs "Mister", or language-equivalent honorific forms such as French "Madame" vs "Mme" or Japanese "様" vs "-san")
-- Filler words ("um", "uh", "so") added or omitted
-- End-of-audio cut-off: if the audio cuts off at the very END of the last turn, missing trailing words is acceptable as long as all entities in that turn were spoken correctly before the cut-off
-- Slight pacing or prosody differences
-- Non-spoken tags: [slow], [firm], [annoyed], and all interruption tags listed above
-- Words in regions flagged by interruption tags as likely not spoken
-- **Adjacent-turn drift:** turn boundaries are derived from imperfect timing/event heuristics, so a sentence may land in the wrong adjacent turn (turn N's intended text actually spoken in turn N-1 or N+1, or vice versa). If content from turn N appears to have been spoken in an adjacent turn, treat it as fidelity-preserved rather than missing. Only mark missing if the content does not appear in this turn **or** in either neighboring turn's audio.
-- Phonetic spellings of Latin/Roman letters in non-Latin-script languages (e.g., Korean "에이" for "A", "비" for "B") — these are the standard spoken form of those letters in that language
-- Number surface forms that sound the same or differ only by minor grammatical agreement — accept the natural spoken rendering of a numeric value, including reversed digit order (German "vierundzwanzig" = 24), large-unit grouping (Japanese 万-based: "ichi-man" / 一万 = 10,000), and gender/agreement variants (Spanish "veintiún" vs "veintiuna"). Do NOT extend this to entirely different words for the same value (e.g., Swiss/Belgian "septante" vs standard French "soixante-dix" — these are different words and should be flagged).
-- Name spelling variants that are phonetically identical (e.g., German Meyer/Meier/Maier/Mayer) — only flag if the spoken sound clearly differs
-
-## Rating Scale (per turn)
-- **1 (High Fidelity)**: All entities are spoken correctly. Non-entity words are faithfully reproduced with no meaningful omissions or additions.
-- **0 (Low Fidelity)**: One or more entity errors, OR significant non-entity word errors that change the meaning of the turn.
-
-## Failure Modes (only when rating = 0)
-For each low-fidelity turn, tag every failure mode that applies. A turn may have multiple failure modes. Leave the list empty when rating = 1.
-
-- **entity_error** — A TTS-critical entity (confirmation code, dollar amount, name, date, time, flight/seat number, reference ID, etc.) was rendered incorrectly in the audio. Use this whenever the intended text shows an entity at that position, regardless of *how* it went wrong: a wrong digit/letter, a missing character in a spelled-out code, a value swapped for a different one, OR sounds that are garbled / slurred / unintelligible in place of an entity. The intended text tells you whether a given position is an entity — if it is, any defect there is \`entity_error\`, not \`garbled_hallucination\`.
-
-- **truncation** — Expected content from the intended text is missing in the audio, and the missing region is **NOT** covered by an interruption tag (\`[likely cut off ...]\`, \`[user interrupts]\`, \`[speaker likely cut itself off]\`, \`[likely interruption]\`). Apply only when the speaker silently dropped content that the tags do not explain. Missing content before a tag is fidelity-preserved by design and should NOT be flagged here.
-
-- **garbled_hallucination** — The audio contains speech-like sounds in place of expected **non-entity** words, but the sounds are distorted, slurred, or unintelligible enough that the listener cannot reliably parse what was said. The TTS produced noise/non-words rather than a clean rendering of the intended text. Use this category only for non-entity regions — if the garbled region corresponds to an entity in the intended text, use \`entity_error\` instead.
-
-- **insertion_hallucination** — The audio contains words or phrases that were NOT in the intended text. The TTS added content on its own — extra sentences, repeated phrases, or filler that the script did not contain.
-
-- **wrong_language** — The audio is spoken in a language different from the expected language ({expected_language}). Use this when the language mismatch is clear and affects a meaningful portion of the turn, not for individual foreign loanwords or proper nouns that are expected to be pronounced natively.
-
-Tagging guidance:
-- If a turn has both an entity error and missing/dropped content outside tagged regions, list both \`entity_error\` and \`truncation\`.
-- Garbled audio at an entity position is \`entity_error\`, not \`garbled_hallucination\` — check the intended text first to decide whether the affected region is an entity.
-- Do NOT use \`truncation\` for content lost to interruption tags, even if the interruption tags are not at the exact location where the truncation occured — that is expected behavior, not an error.
-
-## Response Format
-Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the Intended Turns above:
-{{
-  "turns": [
-    {{
-      "turn_id": <int: the turn number from the Intended Turns>,
-      "language": "<string: the language spoken in this turn, e.g. English, French, Spanish>",
-      "transcript": <string: your transcription of the audio for this turn using the appropriate writing system for the language spoken, use only the audio for this not the intended text>
-      "explanation": "<string: 1-3 sentence analysis in English of fidelity for this turn, citing specific intended vs actual mismatches in the original language, and noting any regions skipped due to interruption flags, if applicable>",
-      "rating": <0 or 1>,
-      "failure_modes": <list of strings: zero or more of "entity_error", "truncation", "garbled_hallucination", "insertion_hallucination", "wrong_language". Must be [] when rating = 1.>
-    }}
-  ]
-}}`,
+    judgePrompt: judgePrompts.tts_fidelity.user_prompt,
     developmentDocUrl: 'https://github.com/ServiceNow/eva/blob/main/docs/metrics/tts_fidelity.md',
   },
   {
@@ -1026,84 +252,11 @@ Respond with a JSON object. Each turn entry must include the turn_id matching th
     displayName: 'User Behavioral Fidelity',
     category: 'validation',
     type: 'llm_judge',
-    judgeModel: 'GPT-5.2',
+    judgeModel: 'GPT-5.2 (medium reasoning)',
     description: 'Determines whether the simulated user\'s behavior corrupted the voice agent evaluation \u2014 specifically, whether the user\'s actions led to the database being in a different state than it should be, or prevented the agent from completing actions it otherwise would have.',
     inputs: 'Agent-side transcript with tool calls, user-side text (ground truth), user goal, user persona, modification tools list',
     outputRange: 'Binary: 0 (corrupted) or 1 (clean)',
-    judgePrompt: `You are an expert evaluator determining whether a simulated user's behavior has corrupted the voice agent evaluation.
-
-Your job is to determine whether the user's behavior caused the agent to be evaluated unfairly \u2014 specifically, whether the user's actions led to the database being in a different state than it should be, or prevented the agent from completing actions it otherwise would have.
-
-## Conversation Evidence
-You are provided with two views of the conversation. Use BOTH when analyzing user behavior.
-
-### Agent-Side Transcript (includes tool calls)
-This is the full conversation as seen by the agent, including all tool calls and their results. IMPORTANT: The user turns in this transcript are the agent's TRANSCRIPTIONS of what the user said \u2014 these may contain transcription errors (e.g., mishearing names, numbers, or codes). Do not penalize the user for information that was transcribed incorrectly by the agent.
-{conversation_trace}
-
-### User-Side Text (ground truth for what the user said)
-{intended_user_turns}
-This is what the user actually said out loud during the conversation. When evaluating whether the user provided correct information, ALWAYS check this source. If there is a discrepancy between the agent-side transcript and this text, the user-side text is the ground truth \u2014 the user said it correctly and the agent misheard.
-
-## User's Goal
-{user_goal}
-
-## User Persona
-{user_persona}
-
-## Modification Tools
-The following are the tools that modify database state. These are the only tools relevant to corruption analysis \u2014 read-only tools are not a concern.
-{modification_tools}
-
-## Evaluation Criteria
-
-Analyze the conversation for the following corruption scenarios:
-
-### Corruption Type 1: User invented requests that caused extra modifications
-  The user made requests OUTSIDE of their assigned goal that caused the agent to call one or more modification tools listed above.
-- Only flag this if the user's off-script request directly led to a modification tool being called.
-- If the user went off-script but the agent only called read-only tools (e.g., searching, looking up information), this is NOT corruption.
-
-### Corruption Type 2: User ended the conversation prematurely
-  The user ended the conversation before the agent had the opportunity to complete the necessary modification tools to fulfill the user's goal.
-- Only flag this if the user chose to end the call when the agent was still actively working toward resolution or had not yet completed the required actions.
-- Do NOT flag this if the agent encountered an error, said they could not help, or was stuck/unhelpful for multiple consecutive turns \u2014 in those cases the user is correct to end the call per their failure condition.
-- Do NOT flag this if the agent completed all necessary actions and the resolution condition was met.
-- NOTE: if the agent initiates a transfer_to_agent tool call or says they are transferring the user, the user is instructed to end the call immediately. DO NOT penalize the user for this.
-
-### Corruption Type 3: User failed to provide required information
-  The user failed to provide information from their goal that the agent explicitly asked for, preventing the agent from completing a necessary modification tool call.
-- Only flag this if the agent clearly asked for specific information that was available in the user's goal, the user failed to provide it, and this directly prevented a modification tool from being called.
-- Do NOT flag this if the agent never asked for the information.
-
-### Corruption Type 4: User looping caused duplicate modifications
-  The user repeatedly made the same request in a loop, causing the agent to call the same modification tool multiple times when it should have only been called once.
-- Only flag this if the looping directly caused duplicate or extra modification tool calls.
-- If the user looped but the agent handled it correctly (did not call extra modification tools), this is NOT corruption.
-
-### Corruption Type 5: User violated decision tree instructions causing a wrong modification
-  The user explicitly violated a specific instruction in their decision tree (negotiation behavior, edge cases, escalation behavior, resolution condition, or failure condition) AND this violation directly caused a modification tool to be called with different parameters than it would have been if the user had followed their instructions correctly.
-- Examples: the user accepted an option that did not meet their must-have criteria when they should have rejected it; the user ignored an edge case instruction (e.g., accepted a standby flight when told to reject standby) and this led to a modification; the user failed to follow their failure condition and instead accepted an unsuitable resolution.
-- Only flag this if the violation directly caused a modification tool to be called incorrectly. If the user deviated from instructions but no modification tool was affected, this is NOT corruption.
-- Do NOT flag this if the agent only presented options that failed to meet the user's must-have criteria AND the user had no correct option to choose \u2014 in that case the agent failed, not the user. Only flag this if the user had a correct action available (e.g., rejecting all options, asking for alternatives, triggering the failure condition) but chose incorrectly instead.
-
-## Rating
-
- **Binary Rating:**
-- **1 (Clean)**: The user's behavior did not corrupt the agent evaluation. None of the corruption types above occurred. Minor deviations from the user's instructions that did not affect database state are acceptable.
-- **0 (Corrupted)**: One or more corruption types occurred \u2014 the user's behavior caused the agent to be evaluated against an incorrect database state.
-
-Respond in JSON format:
-  {{
-    "corruption_analysis": {{
-      "extra_modifications": {{"analysis": "<reasoning about whether the user made off-script requests that caused modification tool calls>", "detected": <bool>}},
-      "premature_ending": {{"analysis": "<reasoning about whether the user ended the call before the agent could complete necessary modifications>", "detected": <bool>}},
-      "missing_information": {{"analysis": "<reasoning about whether the user failed to provide requested information that blocked a modification>", "detected": <bool>}},
-      "duplicate_modifications": {{"analysis": "<reasoning about whether user looping caused duplicate modification tool calls>", "detected": <bool>}},
-      "decision_tree_violation": {{"analysis": "<reasoning about whether the user violated a specific instruction and whether a correct action was available, and whether this caused an incorrect modification>", "detected": <bool>}}
-    }},
-    "rating": <int: 0 or 1>
-  }}`,
+    judgePrompt: judgePrompts.user_behavioral_fidelity.user_prompt,
   },
   {
     id: 'conversation_finished',
@@ -1119,90 +272,11 @@ Respond in JSON format:
     displayName: 'User Speech Fidelity',
     category: 'validation',
     type: 'lalm_judge',
-    judgeModel: 'Gemini 3 Flash',
+    judgeModel: 'Gemini 3.8 Flash',
     description: 'Audio-based check that the user simulator\'s TTS output matches the intended text. Validates that the simulated user is actually saying what it\'s supposed to say.',
     inputs: 'User audio recording, intended user text',
     outputRange: '1-3 per turn (1=low fidelity, 2=medium, 3=high), aggregated as mean',
-    judgePrompt: `You are an expert evaluator judging the fidelity of text-to-speech (TTS) audio against the intended text. You will listen to one audio clip and verify that the spoken content faithfully reproduces the intended text, with special attention to TTS-critical entities.
-
-## Evaluation Mode: User
-
-## Intended Turns
-{intended_turns_formatted}
-
-## Understanding the Intended Text
-
-The intended text may contain non-spoken tags and markers. You must understand these to evaluate fairly.
-
-### Audio-Direction Tags
-Tags like [slow], [firm], [annoyed] describe how the words were meant to be spoken. They are NOT spoken aloud and should never be expected in the audio.
-
-### Interruption Tags
-These are metadata markers inserted during post-processing to describe what happened in the conversation. They are NOT spoken aloud. Never penalize the audio for not containing these tags.
-The tags also tell you that certain portions of the intended text were likely never spoken, because the speaker was interrupted or cut themselves off. Do NOT penalize for missing words that fall in a region the tags indicate was not spoken.
-
-Tag definitions:
-\u2022 [assistant interrupts] \u2014 The agent started speaking over the user. Text after this tag in the user's intended text may have been partially or fully drowned out by the agent speaking. Expect that some words after this tag may be missing or garbled in the audio.
-\u2022 [user interrupts] \u2014 The user started speaking over the agent. Text after this tag in the agent's intended text may have been partially or fully spoken before the agent yielded the floor. Expect that some words after this tag may be missing.
-\u2022 [likely cut off by user] \u2014 In agent intended text, marks approximately where the agent's speech was cut off by the user. Text BEFORE this tag was likely cut off at some point \u2014 the speaker may not have finished everything before it. Text AFTER this tag was most likely said (the agent resumed after the interruption). Do not penalize for missing words before this tag.
-\u2022 [speaker likely cut itself off] \u2014 The agent stopped talking on its own, probably because it detected the user was speaking. Words before this tag were probably not all said. The text after this tag is what the agent said after resuming. Do not penalize for missing words before this tag.
-\u2022 [likely interruption] \u2014 An unexplained break in the speaker's audio. Words around this boundary may be missing or fragmented.
-\u2022 [assistant starts replying - user interrupts] \u2014 In user intended text, the user was speaking, the agent began to reply, and the user interrupted the agent. Text around this boundary may have overlapping speech. Some words near this tag may be missing or garbled.
-
-**Key principle:** If a tag indicates that a section of text was likely not spoken aloud (due to interruption or cut-off), do NOT penalize for those words being missing from the audio. Only evaluate fidelity for words that were reasonably expected to have been spoken.
-
-## Evaluation Criteria
-
-### TTS-Critical Entities (check these carefully)
-- **Personal names**: "John Smith" vs "Jim Smith"
-- **Dates and times**: "December 15th" vs "December 50th", "3:45 PM" vs "3:15 PM"
-- **Reference codes**: Confirmation numbers, incident numbers, booking IDs (e.g., "QWMN62" vs "QWN62")
-- **Numeric values**: Dollar amounts, quantities, percentages (e.g., "$150" vs "$115")
-- **Addresses**: Street numbers, street names, cities (e.g., "123 Main Street" vs "124 Main Street")
-- **Contact information**: Phone numbers, email addresses (e.g., "tom_cobb@gmail.com")
-- **Flight/route numbers**: "UA204" vs "UA240"
-- **Serial numbers and other identifiers**
-
-### Error Types
-- **Missing words**: Words in the intended text that were not spoken AND were reasonably expected to have been spoken (i.e., not in a region flagged by interruption tags)
-- **Added words**: Extra words spoken that are not in the intended text
-- **Wrong words**: Words spoken incorrectly or substituted with different words
-- **Entity errors**: Any of the TTS-critical entities above spoken incorrectly
-
-### What to Ignore
-- Non-spoken tags: [slow], [firm], [annoyed], and all interruption tags listed above
-- Words in regions flagged by interruption tags as likely not spoken
-- Minor pronunciation variations that do not change meaning (accent differences)
-- Natural filler words (um, uh) if they do not affect core content
-- Missing words at the END of the LAST turn only (audio recordings are often cut off before the final utterance completes). However, missing words in the middle of the last turn, or missing words in any earlier turn, should still be penalized.
-
-## Rating Scale (per turn)
-- **3 (High Fidelity)**:
-  - All expected entities spoken correctly (names, dates, destinations, codes, etc)
-  - All words reasonably expected to have been spoken are present and accurate.
-  - Minor pronunciation variations acceptable.
-  - No audio tags spoken out loud.
-- **2 (Medium Fidelity)**:
-  - All entities spoken correctly (names, dates, destinations, codes, etc)
-  - Part of a turn may be missing (often in the first turn, the first few words are missing)
-  - Some words that were reasonably expected may be missing or spoken slightly incorrectly, but they are not critical and the conversation is able to progress even with this issue.
-  - Potential issues with audio tags being said out loud
-- **1 (Low Fidelity)**:
-  - One or more entity errors (missing entities, incorrect entities, etc) OR
-  - Some other major error that prevents the conversation from continuing in a sensible manner.
-
-
-## Response Format
-Respond with a JSON object. Each turn entry must include the turn_id matching the turn number shown in the Intended Turns above:
-{{
-  "turns": [
-    {{
-      "turn_id": <int: the turn number from the Intended Turns>,
-      "explanation": "<succinct analysis; for score 1 or 2, quote the specific issue with intended vs actual; note any regions skipped due to interruption tags>",
-      "rating": <1, 2, 3>
-    }}
-  ]
-}}`,
+    judgePrompt: judgePrompts.user_speech_fidelity.user_prompt,
   },
 ];
 

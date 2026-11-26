@@ -275,6 +275,8 @@ git lfs install
 
 Files matching the patterns in [`.gitattributes`](.gitattributes) are tracked by Git LFS automatically. To track a new kind of file, run `git lfs track "<pattern>"` and commit the updated `.gitattributes`.
 
+If you make changes to the website or the judge prompts, the `build-website` pre-commit hook needs Node.js to rebuild the site. See the [`website/README.md`](website/README.md).
+
 ### Running Tests
 
 Install the `[dev]` extra dependencies as shown in the [Installation](#installation) section.

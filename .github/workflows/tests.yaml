@@ -32,6 +32,13 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev --frozen
 
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
       - name: Run pre-commit
         id: run-pre-commit
         continue-on-error: true
