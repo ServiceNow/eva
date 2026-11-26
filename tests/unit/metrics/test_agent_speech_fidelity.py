@@ -233,6 +233,27 @@ class TestS2SCompute:
         assert result.error is None
 
     @pytest.mark.asyncio
+    async def test_null_explanations_are_scored(self, s2s_metric):
+        """A judge may send "explanation": null at the top level or per turn; the turns still count."""
+        response = json.dumps(
+            {
+                "explanation": None,
+                "turns": [
+                    {"turn_id": 1, "rating": 1, "explanation": None},
+                    {"turn_id": 3, "rating": 0, "explanation": None},
+                ],
+            }
+        )
+        s2s_metric.llm_client.generate_text.return_value = (response, None)
+        with patch.object(s2s_metric, "load_role_audio", return_value=MagicMock()):
+            with patch.object(s2s_metric, "encode_audio_segment", return_value="base64audio"):
+                result = await s2s_metric.compute(_default_context())
+
+        assert result.error is None
+        assert result.details["num_evaluated"] == 2
+        assert result.score == 0.5
+
+    @pytest.mark.asyncio
     async def test_all_low_fidelity(self, s2s_metric):
         """All turns rated 0 -> zero score."""
         response = make_judge_response(
