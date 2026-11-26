@@ -1,0 +1,160 @@
+{
+ "latin_script": false,
+ "letter_names": {
+  "A": "ए",
+  "B": "बी",
+  "C": "सी",
+  "D": "डी",
+  "E": "ई",
+  "F": "एफ",
+  "G": "जी",
+  "H": "एच",
+  "I": "आई",
+  "J": "जे",
+  "K": "के / कै",
+  "L": "एल",
+  "M": "एम",
+  "N": "एन",
+  "O": "ओ",
+  "P": "पी",
+  "Q": "क्यू",
+  "R": "आर",
+  "S": "एस",
+  "T": "टी",
+  "U": "यू",
+  "V": "वी",
+  "W": "डब्ल्यू",
+  "X": "एक्स",
+  "Y": "वाई / वाय",
+  "Z": "ज़ेड / जेड / ज़ी"
+ },
+ "letter_note": "Hindi uses English letter names, written here in Devanagari; these are not wrong language.",
+ "digit_names": {
+  "0": "शून्य",
+  "1": "एक",
+  "2": "दो",
+  "3": "तीन",
+  "4": "चार",
+  "5": "पाँच / पांच",
+  "6": "छह / छः / छे",
+  "7": "सात",
+  "8": "आठ",
+  "9": "नौ"
+ },
+ "number_readings": "Grouped by हज़ार, लाख, करोड़; 'एक लाख पच्चीस हज़ार' = 125,000.",
+ "time_readings": "'डेढ़ बजे' = 1:30; 'ढाई बजे' = 2:30; 'साढ़े तीन' = 3:30 (साढ़े only from 3 up); 'सवा चार' = 4:15; 'पौने पाँच' = 4:45; 'चार बजकर बीस मिनट' = 4:20.",
+ "date_readings": null,
+ "correct_other": [
+  "English digit names such as 'zero' and 'eight' are correct when the intended or trace text writes the digit as a numeral or in English."
+ ],
+ "english_name_traps": [],
+ "wrong_by_name": [],
+ "wrong_value": [
+  "साढ़े पाँच for 4:30",
+  "पौने चार for 4:45"
+ ],
+ "unusual": [
+  "An English digit name when the intended or trace text spells out the Hindi digit word, such as 'eight' for आठ.",
+  "Literal clock readings such as 'एक तीस' for 1:30 and 'चार तीस', or 24-hour readings such as 'तेरह तीस', are non-native in conversation."
+ ],
+ "accent_notes": [],
+ "confusable": [
+  {
+   "forms": "Z/G",
+   "names": "ज़ी/जी"
+  },
+  {
+   "forms": "17/70",
+   "names": "सत्रह/सत्तर"
+  },
+  {
+   "forms": "19/29/49",
+   "names": "उन्नीस/उनतीस/उनचास"
+  },
+  {
+   "forms": "7/60",
+   "names": "सात/साठ"
+  },
+  {
+   "forms": "G/J",
+   "names": "जी/जे"
+  },
+  {
+   "forms": "19/29",
+   "names": "उन्नीस/उनतीस"
+  },
+  {
+   "forms": "3/30",
+   "names": "तीन/तीस"
+  }
+ ],
+ "same_sound": [
+  {
+   "forms": "V/W",
+   "names": "व",
+   "scope": "name_spelling"
+  }
+ ],
+ "letter_digit_homophones": null,
+ "names_logographic": false,
+ "disambiguation_questions": [],
+ "loanwords": [
+  "बुकिंग",
+  "कोड",
+  "ईमेल",
+  "आईडी"
+ ],
+ "loanword_notes": [
+  "Hindi–English code-switching is supported: English words and phrases inside Hindi sentences, in Devanagari or Latin script, including service terms, English number words and short phrases such as 'one moment'.",
+  "A transcript rendering a spoken loanword in Latin script instead of Devanagari is not evidence of English speech; Latin script alone is never evidence."
+ ],
+ "speaker_gender": {
+  "forms": "verbs, participles and adjectives with मैं",
+  "pairs": [
+   [
+    "मैं देख रहा हूँ",
+    "मैं देख रही हूँ"
+   ],
+   [
+    "मैं करता हूँ",
+    "मैं करती हूँ"
+   ],
+   [
+    "मैं गया था",
+    "मैं गई थी"
+   ]
+  ],
+  "not_flagged": "the perfective with ने agreeing with the object ('मैंने आपकी बुकिंग देख ली है'), forms agreeing with आप, and हम with masculine plural forms ('हम देख रहे हैं'), standard for any speaker"
+ },
+ "register": {
+  "applies": true,
+  "cultural_norms": [
+   "Honorifics (आप, -इए/-इएगा, 'जी, बिल्कुल'), compound verbs ('देख लेता हूँ', 'कर दिया गया है') and polite requests ('क्या आप कृपया… बता सकते हैं') make Hindi longer than English without adding cognitive load.",
+   "One formula per function, such as 'ठीक है', 'जी', 'धन्यवाद', or 'नमस्ते' at the opening, is not filler."
+  ],
+  "not_excess_length": [
+   "English loanwords in normal Hindi service speech, such as booking, PIN, ID and ticket, in Devanagari or Latin script."
+  ]
+ },
+ "script_mixing": {
+  "applies": true,
+  "gloss_examples": [
+   "कर्मचारी आईडी (employee ID)",
+   "पुष्टिकरण कोड (confirmation code)",
+   "PIN (पिन नंबर)"
+  ],
+  "not_violation": [
+   "English words or codes used on their own without a duplicate, in Devanagari or Latin script, including booking, PIN, ticket, employee ID, flight numbers and brand names.",
+   "The danda (।) and normal Hindi punctuation are not formatting violations."
+  ]
+ },
+ "transcription": {
+  "same_value": [
+   "Devanagari letter names and their Latin letters: ए = A, बी = B, सी = C, डी = D, ई = E, जी = G, जे = J, एम = M, एन = N, पी = P, क्यू = Q, वी = V, डब्ल्यू = W, ज़ेड = Z.",
+   "Hindi and English digit names: शून्य / ज़ीरो / zero = 0; दो / टू / two = 2.",
+   "The same English loanword in Devanagari or Latin script: मार्च = March, कोड = code, ईमेल = email.",
+   "Indian digit grouping: 1,50,000 = 150,000 = डेढ़ लाख."
+  ],
+  "no_match": []
+ }
+}
