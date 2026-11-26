@@ -382,6 +382,7 @@ class PhonicAssistantServer(AbstractAssistantServer):
                     """Consume events from the Phonic socket."""
                     nonlocal _in_model_turn, _user_speech_stop_ts, _phonic_ended_conversation
                     nonlocal _phonic_speech_stop_wall_ms
+                    nonlocal _user_speech_start_ts
                     nonlocal _assistant_turn_start_ts, _asst_text
 
                     _forwarded_bytes = 0
