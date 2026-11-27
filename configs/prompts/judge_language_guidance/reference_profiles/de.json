@@ -1,0 +1,125 @@
+{
+ "latin_script": true,
+ "letter_names": {
+  "A": "ah",
+  "B": "beh",
+  "C": "zeh",
+  "D": "deh",
+  "E": "eh",
+  "F": "eff",
+  "G": "geh",
+  "H": "hah",
+  "I": "ih",
+  "J": "jott",
+  "K": "kah",
+  "L": "ell",
+  "M": "emm",
+  "N": "enn",
+  "O": "oh",
+  "P": "peh",
+  "Q": "kuh",
+  "R": "err",
+  "S": "ess",
+  "T": "teh",
+  "U": "uh",
+  "V": "fau",
+  "W": "weh",
+  "X": "iks",
+  "Y": "ypsilon",
+  "Z": "zett"
+ },
+ "letter_note": "Pronunciations use German spelling conventions, not English ones. Ä, Ö and Ü are pronounced ä, ö and ü.",
+ "digit_names": {
+  "0": "null",
+  "1": "eins",
+  "2": "zwei / zwo",
+  "3": "drei",
+  "4": "vier",
+  "5": "fünf",
+  "6": "sechs",
+  "7": "sieben",
+  "8": "acht",
+  "9": "neun"
+ },
+ "number_readings": "'dreiundfünfzig' = 53 (units first, not 35 or '3 50')",
+ "time_readings": "'vierzehn Uhr dreißig' = 14:30; 'halb drei' = 2:30 or 14:30, not 3:30; 'Viertel nach zwei' = 2:15 or 14:15; 'Viertel vor drei' = 2:45 or 14:45; 'viertel drei' = 2:15 (southern German, valid for the simulated user, not the agent); 'drei viertel drei' = 2:45 (southern German, valid for the simulated user, not the agent)",
+ "date_readings": "'achter November neunzehnhundertneunzig' = 8.11.1990; 'achter November sechsundzwanzig' = 8.11.26; 'zweitausendsechsundzwanzig' = 2026; 'am zweiundzwanzigsten April zweitausendsechsundzwanzig' = 22. April 2026",
+ "correct_other": [
+  "Buchstabiertafel words are correct, e.g. 'D wie Dora', 'Z wie Zeppelin'."
+ ],
+ "english_name_traps": [
+  "'bee-ell-dee' for BLD, 'jay' for J, 'dee' for D, 'six' for 6 use English names.",
+  "English E /iː/ sounds like German I /iː/; English A /eɪ/ sounds like German E /eː/; English V /viː/ is not German V /faʊ/ and starts like German W /veː/."
+ ],
+ "wrong_by_name": [],
+ "wrong_value": [
+  "'siebenundfünfzig' for 75",
+  "'halb drei' for 3:30"
+ ],
+ "unusual": [
+  "A date read as digit groups that a German listener cannot parse as a date: 'neunzehn neunzig, zwei, Monat elf' for 2.11.1990."
+ ],
+ "accent_notes": [],
+ "confusable": [
+  {
+   "forms": "D/E/G/T",
+   "names": "deh/eh/geh/teh"
+  },
+  {
+   "forms": "B/P",
+   "names": "beh/peh"
+  },
+  {
+   "forms": "M/N/L",
+   "names": "emm/enn/ell"
+  },
+  {
+   "forms": "F/S",
+   "names": "eff/ess"
+  },
+  {
+   "forms": "2/3",
+   "names": "zwei/drei"
+  },
+  {
+   "forms": "B/D/P/T/W/G/E/C",
+   "names": "beh/deh/peh/teh/weh/geh/eh/tseh"
+  }
+ ],
+ "same_sound": [],
+ "letter_digit_homophones": null,
+ "names_logographic": false,
+ "disambiguation_questions": [],
+ "loanwords": [
+  "Ticket",
+  "Login",
+  "Account",
+  "Laptop",
+  "E-Mail"
+ ],
+ "loanword_notes": [
+  "A half-English pronunciation of a German word such as 'Perfekt' is accent, not wrong language."
+ ],
+ "speaker_gender": null,
+ "register": {
+  "applies": true,
+  "cultural_norms": [
+   "Formal Sie register, including Sie-forms and polite constructions such as 'Könnten Sie mir bitte … nennen?' and 'Darf ich Sie bitten, …', is not filler.",
+   "Short service phrases, one per function, are not filler: 'Gerne', 'Sehr gern', 'Einen Moment bitte', 'Vielen Dank', 'Alles klar', 'Ich schaue mir das gerne für Sie an'."
+  ],
+  "not_excess_length": [
+   "Numbers and dates written out in words are not excess length because that is how TTS speaks them. Long German compound number words are a single information unit."
+  ]
+ },
+ "script_mixing": {
+  "applies": false,
+  "gloss_examples": [],
+  "not_violation": []
+ },
+ "transcription": {
+  "same_value": [
+   "ä = ae, ö = oe, ü = ue, ß = ss: Krüger = Krueger, Müller = Mueller, Straße = Strasse. These spelling variants are correct on every mention, even after the user spelled the name."
+  ],
+  "no_match": []
+ }
+}
