@@ -135,6 +135,12 @@ class _TurnExtractionState:
     # Track which turn each speaker's audio started at, so late-arriving speech transcripts land at the correct turn.
     last_assistant_audio_turn: int = 0
     last_user_audio_turn: int = 0
+    # S2S only: speech-start evidence since the last assistant_speech transcript, used to order the transcript
+    # against tool calls (it arrives >1s after the audio ends, so its own timestamp can't). (turn, timestamp_ms)
+    # of each assistant audio_start, and timestamp_ms of each audit_log/assistant entry (one per model response,
+    # logged as its speech begins — this also catches responses queued into one continuous audio segment).
+    assistant_audio_starts_since_speech: list[tuple[int, int]] = field(default_factory=list)
+    assistant_text_ms_since_speech: list[int] = field(default_factory=list)
     # True when assistant audio started after user audio ended, meaning any subsequent user_speech (while
     # user_audio_open is False) belongs to a new speaking session and should be buffered until the next
     # audio_start(simulated_user) sets the correct turn.
@@ -295,6 +301,7 @@ def _handle_audit_log_event(
 
     elif event["event_type"] == "assistant":
         if pipeline_type == PipelineType.S2S:
+            state.assistant_text_ms_since_speech.append(event["timestamp_ms"])
             return
         turn = state.turn_num
         content = event["data"]
@@ -441,6 +448,7 @@ def _handle_audio_start(
     elif role == "assistant":
         state.assistant_audio_open = True
         state.last_assistant_audio_turn = state.turn_num
+        state.assistant_audio_starts_since_speech.append((state.turn_num, event["timestamp_ms"]))
         if not state.user_audio_open:
             state.assistant_responded_since_user_ended = True
             # For S2S pipelines, mark that the assistant spoke as soon as audio starts.
@@ -484,6 +492,40 @@ def _handle_audio_end(event: dict, state: "_TurnExtractionState") -> None:
         state.assistant_audio_open = False
 
 
+# An audit_log/assistant entry is logged up to ~250ms before its audio starts. Entries this close to the start of
+# a still-playing segment belong to that segment, not to the transcript that just arrived.
+_OPEN_SEGMENT_TEXT_MARGIN_MS = 500
+
+
+def _consume_assistant_speech_start(state: "_TurnExtractionState", turn: int) -> int | None:
+    """Return when the latest speech covered by an arriving assistant transcript began, and reset the tracking.
+
+    Used to order S2S transcripts against tool calls: a tool call after this point came after all of the
+    transcript's speech. The latest start (not the first) is used, so a transcript that also covers speech after a
+    tool call (e.g. "Let me check. I found your reservation.") stays after that tool call. Returns None when no
+    audio of ``turn`` is covered.
+    """
+    starts = state.assistant_audio_starts_since_speech
+    texts = state.assistant_text_ms_since_speech
+    carry: list[tuple[int, int]] = []
+    cutoff_ms: float = float("inf")
+    if state.assistant_audio_open and starts:
+        # The segment still playing is not covered by this transcript; it starts the next one.
+        carry = [starts[-1]]
+        cutoff_ms = starts[-1][1] - _OPEN_SEGMENT_TEXT_MARGIN_MS
+        starts = starts[:-1]
+    state.assistant_audio_starts_since_speech = carry
+    state.assistant_text_ms_since_speech = [ms for ms in texts if ms >= cutoff_ms]
+
+    covered_starts = [ms for t, ms in starts if t == turn]
+    if not covered_starts:
+        return None
+    # One response can play as several audio segments (a pause mid-sentence), so audit entries — one per model
+    # response — mark new speech better than segment starts do. Fall back to the latest segment start.
+    covered_texts = [ms for ms in texts if covered_starts[0] - _OPEN_SEGMENT_TEXT_MARGIN_MS <= ms < cutoff_ms]
+    return max(covered_texts) if covered_texts else covered_starts[-1]
+
+
 def _handle_user_simulator_event(
     event: dict,
     state: "_TurnExtractionState",
@@ -509,15 +551,17 @@ def _handle_user_simulator_event(
         append_turn_text(context.transcribed_assistant_turns, turn, text, sep)
         # For S2S, assistant trace entries come from the user simulator (audit log assistant entries are skipped)
         if pipeline_type == PipelineType.S2S:
-            conversation_trace.append(
-                {
-                    "role": "assistant",
-                    "content": text,
-                    "timestamp": event["timestamp_ms"],
-                    "type": "transcribed",
-                    "turn_id": turn,
-                }
-            )
+            speech_start_ms = _consume_assistant_speech_start(state, turn)
+            entry = {
+                "role": "assistant",
+                "content": text,
+                "timestamp": event["timestamp_ms"],
+                "type": "transcribed",
+                "turn_id": turn,
+            }
+            if speech_start_ms is not None:
+                entry["_speech_start_ms"] = speech_start_ms
+            conversation_trace.append(entry)
 
     elif event["event_type"] == "user_speech":
         # Buffer user_speech when it cannot be paired with the current user audio session. This happens when:
@@ -610,6 +654,33 @@ def _validate_conversation_trace(
                 f"at turn {turn_id}/{len(context.intended_assistant_turns)}: {audit_text[:80]!r}"
             )
     return validated_trace
+
+
+def _order_s2s_speech_before_tools(conversation_trace: list[dict]) -> list[dict]:
+    """Move S2S assistant speech back over tool entries that happened after the speech started.
+
+    S2S assistant entries are timestamped when the user simulator's transcript arrives, >1s after the audio
+    ends. A tool call made in that gap (e.g. right after "Let me check that.") sorts ahead of the speech that
+    preceded it, and the pre-tool speech then merges with the post-tool reply. An entry is moved back past the
+    tool entries of its turn that happened after its latest speech began (``_speech_start_ms``); user and other
+    assistant entries are never reordered.
+    """
+    reordered: list[dict] = []
+    for entry in conversation_trace:
+        start = entry.pop("_speech_start_ms", None)
+        pos = len(reordered)
+        if start is not None:
+            while pos > 0:
+                prev = reordered[pos - 1]
+                if (
+                    prev.get("type") not in ("tool_call", "tool_response")
+                    or prev.get("turn_id") != entry.get("turn_id")
+                    or prev.get("timestamp", 0) <= start
+                ):
+                    break
+                pos -= 1
+        reordered.insert(pos, entry)
+    return reordered
 
 
 def _fix_interruption_labels(context: "_ProcessorContext", state: "_TurnExtractionState") -> None:
@@ -1060,7 +1131,7 @@ class MetricsContextProcessor:
         _pair_audio_segments(state, context)
         if context.pipeline_type == PipelineType.S2S:
             # S2S has no pipecat segments to validate against — trace entries come from user simulator directly
-            validated_trace = conversation_trace
+            validated_trace = _order_s2s_speech_before_tools(conversation_trace)
         else:
             validated_trace = _validate_conversation_trace(conversation_trace, context)
         context.conversation_trace = group_consecutive_turns(validated_trace)

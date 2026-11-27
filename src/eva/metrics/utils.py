@@ -8,7 +8,10 @@ from pathlib import Path
 from statistics import harmonic_mean, mean
 from typing import Any
 
+import numpy as np
 from pydub import AudioSegment
+from pydub.silence import detect_nonsilent as _pydub_detect_nonsilent
+from pydub.utils import db_to_float
 
 from eva.models.results import MetricScore
 from eva.utils.json_utils import extract_and_load_json, extract_and_load_json_iter
@@ -169,6 +172,79 @@ def load_audio_file(audio_path: Path) -> AudioSegment | None:
     except Exception:
         logger.exception(f"Failed to load audio file {audio_path}")
         return None
+
+
+def detect_nonsilent(
+    audio_segment: AudioSegment, min_silence_len: int, silence_thresh: float, seek_step: int
+) -> list[list[int]]:
+    """Return the same [start_ms, end_ms] ranges as ``pydub.silence.detect_nonsilent``, vectorized.
+
+    pydub computes the RMS of every ``min_silence_len`` window in a Python loop, which took ~0.5 s on a
+    5-minute 24 kHz track. Metrics run in the conversation event loop, so that blocked every live call.
+    This computes the same windows from a cumulative sum of squares. The window bounds, zero padding
+    and the truncated ``audioop.rms`` value all match pydub, so the result is identical. Only 16-bit
+    audio takes the fast path; other sample widths fall back to pydub.
+    """
+    if audio_segment.sample_width != 2:
+        return _pydub_detect_nonsilent(audio_segment, min_silence_len, silence_thresh, seek_step)
+
+    seg_len = len(audio_segment)  # ms, rounded the way pydub rounds
+    if seg_len < min_silence_len:
+        silence_starts: list[int] = []
+    else:
+        threshold = db_to_float(silence_thresh) * audio_segment.max_possible_amplitude
+        last_start = seg_len - min_silence_len
+        starts = list(range(0, last_start + 1, seek_step))
+        if last_start % seek_step:
+            starts.append(last_start)
+        start_ms = np.asarray(starts, dtype=np.int64)
+        end_ms = np.minimum(start_ms + min_silence_len, seg_len)
+
+        # pydub's AudioSegment[a:b] maps ms to frames as int(ms * (frame_rate / 1000.0)), zero-pads a
+        # short tail, and audioop.rms divides by the padded sample count.
+        frames_per_ms = audio_segment.frame_rate / 1000.0
+        start_f = (start_ms * frames_per_ms).astype(np.int64)
+        end_f = (end_ms * frames_per_ms).astype(np.int64)
+        channels = audio_segment.channels
+        samples = np.frombuffer(audio_segment.raw_data, dtype="<i2")
+        n_frames = len(samples) // channels
+        sq_cumsum = np.concatenate(([0], np.cumsum(samples.astype(np.int64) ** 2)))
+        window_sq = (
+            sq_cumsum[np.minimum(end_f, n_frames) * channels] - sq_cumsum[np.minimum(start_f, n_frames) * channels]
+        )
+        n = (end_f - start_f) * channels
+        with np.errstate(divide="ignore", invalid="ignore"):
+            rms = np.where(n > 0, np.floor(np.sqrt(window_sq.astype(np.float64) / n)), 0.0)
+        silence_starts = start_ms[rms <= threshold].tolist()
+
+    # From here on this is pydub's own range bookkeeping (detect_silence + detect_nonsilent), unchanged.
+    silent_ranges: list[list[int]] = []
+    if silence_starts:
+        prev_i = silence_starts.pop(0)
+        current_range_start = prev_i
+        for silence_start_i in silence_starts:
+            continuous = silence_start_i == prev_i + seek_step
+            silence_has_gap = silence_start_i > (prev_i + min_silence_len)
+            if not continuous and silence_has_gap:
+                silent_ranges.append([current_range_start, prev_i + min_silence_len])
+                current_range_start = silence_start_i
+            prev_i = silence_start_i
+        silent_ranges.append([current_range_start, prev_i + min_silence_len])
+
+    if not silent_ranges:
+        return [[0, seg_len]]
+    if silent_ranges[0][0] == 0 and silent_ranges[0][1] == seg_len:
+        return []
+    prev_end_i = 0
+    nonsilent_ranges = []
+    for start_i, end_i in silent_ranges:
+        nonsilent_ranges.append([prev_end_i, start_i])
+        prev_end_i = end_i
+    if end_i != seg_len:
+        nonsilent_ranges.append([prev_end_i, seg_len])
+    if nonsilent_ranges[0] == [0, 0]:
+        nonsilent_ranges.pop(0)
+    return nonsilent_ranges
 
 
 def resolve_turn_id(

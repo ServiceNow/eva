@@ -48,7 +48,7 @@ Measures the quality of the user's conversational experience:
 | [`conciseness`](conciseness.md) | Judge | Language Model | Whether responses are appropriately concise for voice (1-3) |
 | [`conversation_progression`](conversation_progression.md) | Judge | Language Model | Whether assistant moves conversation forward without repetition (1-3) |
 
-### Diagnostic (9 metrics)
+### Diagnostic (10 metrics)
 
 Metrics that help isolate root causes of failures. These provide signals for understanding what went wrong, but are not directly used in final evaluation scores.
 
@@ -59,6 +59,7 @@ Metrics that help isolate root causes of failures. These provide signals for und
 | [`response_speed`](response_speed.md) | Deterministic | VAD, Pipeline | Latency between user utterance end and assistant response start (seconds) |
 | [`time_to_completion`](time_to_completion.md) | Deterministic | Pipeline | Wall-clock time to complete the task, successful runs only (seconds, lower is better) |
 | [`turns_to_completion`](turns_to_completion.md) | Deterministic | Language Model | Number of turns to complete the task, successful runs only (count, lower is better) |
+| [`delegation_rate`](delegation_rate.md) | Deterministic | Language Model | Fraction of user turns delegated to the backend model, delegation frameworks only (`openai_live`) (0-1) |
 | [`speakability`](speakability.md) | Judge | Language Model | Whether text is voice-friendly and appropriate for TTS (0-1) |
 | [`stt_wer`](stt_wer.md) | Deterministic | Speech Recognition | Speech-to-Text Word Error Rate using jiwer (0.0+) |
 | [`tool_call_validity`](tool_call_validity.md) | Deterministic | Language Model | Fraction of tool calls with correctly formatted parameters (0.0-1.0) |

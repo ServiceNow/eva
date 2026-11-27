@@ -218,6 +218,20 @@ class ModelConfig(BaseModel):
         None,
         description="Forward parallel_tool_calls when tools are present; None leaves provider defaults.",
     )
+    backchanneling: Literal["off", "auto"] = Field(
+        "auto",
+        description=(
+            "Backchannel policy in the GPT-Live (openai_live) frontend prompt: 'off' tells the model not "
+            "to backchannel, 'auto' allows moderate backchannels. Note that backchannel control cannot be guaranteed. "
+            "Ignored by other pipelines."
+        ),
+    )
+
+    @field_validator("backchanneling", mode="before")
+    @classmethod
+    def _normalize_backchanneling(cls, value: str) -> str:
+        return value.strip().lower() if isinstance(value, str) else value
+
     assistant_gender: Literal["M", "F"] | None = Field(
         None,
         description=(
@@ -597,7 +611,15 @@ class RunConfig(BaseSettings):
 
     # Framework selection
     framework: Literal[
-        "pipecat", "openai_realtime", "gemini_live", "elevenlabs", "grok_voice", "smallest_hydra", "cartesia", "phonic"
+        "pipecat",
+        "openai_realtime",
+        "gemini_live",
+        "elevenlabs",
+        "grok_voice",
+        "smallest_hydra",
+        "cartesia",
+        "phonic",
+        "openai_live",
     ] = Field(
         "pipecat",
         description=(
@@ -610,6 +632,7 @@ class RunConfig(BaseSettings):
             "'smallest_hydra': Smallest Hydra speech-to-speech API."
             "'cartesia': Cartesia Managed Agents over a WebSocket connection."
             "'phonic': Phonic speech-to-speech API via the phonic SDK."
+            "'openai_live': OpenAI GPT-Live API (gpt-live-1) with Responses delegation."
         ),
     )
 

@@ -11,10 +11,9 @@ from google import genai
 from google.api_core import exceptions as google_exceptions
 from google.genai import types as genai_types
 from pydub import AudioSegment
-from pydub.silence import detect_nonsilent
 
 from eva.metrics.base import AudioJudgeMetric, MetricContext
-from eva.metrics.utils import aggregate_per_turn_scores, normalize_rating, resolve_turn_id
+from eva.metrics.utils import aggregate_per_turn_scores, detect_nonsilent, normalize_rating, resolve_turn_id
 from eva.models.results import MetricScore
 from eva.utils.json_utils import extract_and_load_json
 
@@ -49,7 +48,9 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
     async def compute(self, context: MetricContext) -> MetricScore:
         """Compute speech fidelity score using audio + LLM judge."""
         try:
-            audio_segment = self.load_role_audio(context, self.role)
+            # Audio load, trim and encode run in a thread: metrics share the event loop with live
+            # conversations, and on a multi-minute track this work blocked every call for ~0.5 s.
+            audio_segment = await asyncio.to_thread(self.load_role_audio, context, self.role)
             if audio_segment is None:
                 return MetricScore(
                     name=self.name,
@@ -59,11 +60,11 @@ class SpeechFidelityBaseMetric(AudioJudgeMetric):
                 )
 
             if self.trim_silence:
-                audio_segment = self._trim_silence(audio_segment, context)
+                audio_segment = await asyncio.to_thread(self._trim_silence, audio_segment, context)
 
             intended_turns = self._get_intended_turns(context)
             num_turns = len(intended_turns)
-            audio_b64 = self.encode_audio_segment(audio_segment)
+            audio_b64 = await asyncio.to_thread(self.encode_audio_segment, audio_segment)
             intended_turns_formatted = self._format_intended_turns(intended_turns)
 
             prompt = self.get_judge_prompt(

@@ -41,6 +41,8 @@ The judge identifies which failure modes are present when rating < 3:
 - Slightly longer end-of-call wrap-up with recap/confirmation
 - Essential information (confirmation codes, voucher numbers) regardless of length
 - Interrupted/truncated content caused by user interruptions
+- Short backchannels and acknowledgments ("Mm-hmm", "Okay"), including a turn that is only a backchannel; the same acknowledgment restated several times within one turn is still flagged
+- Brief speech before or around a tool call ("Let me check that", "Thanks for waiting")
 
 ### Scoring
 

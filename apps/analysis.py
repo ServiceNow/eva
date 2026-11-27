@@ -431,6 +431,8 @@ def _get_turn_metric_info(turn_id: int, per_turn_metrics: dict[str, dict]) -> li
                 short = f"latency {evidence['latency_ms']:.0f}ms"
             elif reason == "agent_interrupt" and "overlap_ms" in evidence:
                 short = f"agent interrupt (overlap {evidence['overlap_ms']:.0f}ms)"
+            elif reason == "backchannel" and "post_interrupt_latency_ms" in evidence:
+                short = f"backchannel (response {evidence['post_interrupt_latency_ms']:.0f}ms after user)"
             elif reason == "user_interrupt" and "yield_ms" in evidence:
                 short = f"user interrupt (yield {evidence['yield_ms']:.0f}ms)"
             elif reason == "dual_interrupt":
@@ -2209,6 +2211,7 @@ def render_conversation_trace_tab(metrics: RecordMetrics | None, record_dir: Pat
                         reason_label = {
                             "latency": "Latency",
                             "agent_interrupt": "Agent interrupted user",
+                            "backchannel": "Agent backchannel",
                             "user_interrupt": "User interrupted agent",
                             "dual_interrupt": "Both interrupted",
                         }.get(reason, reason or "—")
