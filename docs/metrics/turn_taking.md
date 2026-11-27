@@ -27,7 +27,7 @@ For each evaluable turn, one of four signal combinations is used depending on th
 
 | Turn flag state | Signal → Score |
 |---|---|
-| `turn ∈ assistant_interrupted_turns` only | `min(overlap_score, count_score, post_interrupt_latency_score)` — each bounded by `AGENT_INTERRUPT_MAX_SCORE = 0.5` except the post-interrupt latency (unbounded [0, 1]), so the final turn score is capped at 0.5. |
+| `turn ∈ assistant_interrupted_turns` only | `min(overlap_score, count_score, post_interrupt_latency_score)` — each bounded by `AGENT_INTERRUPT_MAX_SCORE = 0.5` except the post-interrupt latency (unbounded [0, 1]), so the final turn score is capped at 0.5. Exception: when every overlapping agent utterance is a short backchannel and the agent then replies, the turn is scored on the reply instead (see [Backchannels](#backchannels-agent-interrupt-turns)). |
 | `turn ∈ user_interrupted_turns` only | **Yield score** |
 | `turn` in **both** sets | `min(agent_interrupt_score, yield_score)` |
 | neither flag | **Latency score** |
@@ -77,7 +77,7 @@ Output lives in `[0, AGENT_INTERRUPT_MAX_SCORE]` (default `[0, 0.5]`). The cap i
 
 ### Count curve (agent-interrupt turns)
 
-`n_interrupt_segments` is the number of **distinct** agent audio segments that overlap the user's speech in the same user turn. A single brief barge-in (n=1) is less disruptive than three separate barge-ins in a long user utterance; this sub-score penalizes the latter.
+`n_interrupt_segments` is the number of **distinct** agent audio segments that overlap the user's speech in the same user turn, counting only real interruptions: segments of backchannels are left out (see [Backchannels](#backchannels-agent-interrupt-turns)). A single brief barge-in (n=1) is less disruptive than three separate barge-ins in a long user utterance; this sub-score penalizes the latter.
 
 ```
 score = max(0, AGENT_INTERRUPT_MAX_SCORE * (1 - (n - 1) / (INTERRUPT_COUNT_HARD - 1)))
@@ -96,6 +96,24 @@ Only defined for `n ≥ 1` (a turn with zero overlap segments isn't really an ag
 After folding in `overlap_score` and `count_score`, the agent-interrupt turn score is additionally min'd with the **post-interrupt latency score**: the silent gap between the user's last audio end and the agent's first *settled* segment (the first agent segment starting strictly after the user finished) passed through the same latency curve as above (tool-call-aware). This catches the "brief barge-in, then 10s wait" failure mode that the overlap curve alone would not penalize.
 
 Post-interrupt latency is omitted when the conversation ended during the overlap (no settled segment follows) or when an agent segment spans the user's end (continuous speech — there is no silent gap to measure). The post-interrupt latency score is uncapped (lives in `[0, 1]`), but since it is min'd with `overlap_score` and `count_score` (both ≤ 0.5), the final turn score is still ≤ 0.5.
+
+### Backchannels (agent-interrupt turns)
+
+Agent segments less than `BACKCHANNEL_MERGE_GAP_MS` (300 ms) apart are merged into one utterance, and each agent utterance that overlaps the user's speech is classified:
+
+| Kind | Rule |
+|---|---|
+| backchannel | At most `BACKCHANNEL_MAX_MS` (1.5 s) long, and ends at least `BACKCHANNEL_USER_CONTINUES_MS` (200 ms) before the user segment it overlaps most ends — the user kept talking. |
+| late backchannel | Just as short, but still playing when that user segment ends, or ending less than 200 ms before it — e.g. an "mm-hmm" that runs into the user finishing. |
+| interruption | Longer than 1.5 s. |
+
+The turn is scored by its worst kind:
+
+- **Any interruption** → the interruption scoring above; only interruption segments count toward `n_interrupt_segments`.
+- **Late backchannel, no interruption** → reason `"late_backchannel"`, score `min(LATE_BACKCHANNEL_MAX_SCORE, reply_latency_score)` with `LATE_BACKCHANNEL_MAX_SCORE = 0.75`: penalized, but always less than a barge-in (at most 0.5).
+- **Only backchannels** → reason `"backchannel"`, score `reply_latency_score` (full `[0, 1]`).
+
+The reply latency runs from the user's last audio end to the first agent utterance that starts after it, so a late backchannel still playing as the user stops is skipped rather than blocking the measurement. It goes through the usual (tool-call-aware) latency curve and is reported as `post_interrupt_latency_ms`. If the agent never speaks again after the user ends, the short utterance was its turn, started before the user finished: the turn keeps the interruption scoring, with every overlapping segment counted.
 
 ### Yield curve (user-interrupt turns)
 
@@ -131,9 +149,10 @@ The remaining fields depend on which signal fired:
 **Agent-interrupt turns** (either agent-only or dual)
 - `overlap_ms`
 - `overlap_score` — in `[0, AGENT_INTERRUPT_MAX_SCORE]`.
-- `n_interrupt_segments` — how many distinct agent audio segments overlap the user's speech in this turn.
+- `n_interrupt_segments` — how many distinct agent audio segments overlap the user's speech in this turn, leaving out backchannels.
 - `interrupt_count_score` — in `[0, AGENT_INTERRUPT_MAX_SCORE]`. Present only when `n_interrupt_segments ≥ 1`.
-- `post_interrupt_latency_ms` — gap between user's last audio end and the agent's first *settled* segment (the first one starting **after** the user finished). Present only when such a segment exists.
+- `post_interrupt_latency_ms` — gap between user's last audio end and the agent's first *settled* segment (the first one starting **after** the user finished). Present only when such a segment exists. On backchannel turns it times the agent's reply, skipping a late backchannel.
+- `backchannel` / `late_backchannel` — `true` on turns scored as a backchannel or a late backchannel.
 - `post_interrupt_latency_score` — `_latency_score(post_interrupt_latency_ms, has_tool_call=…)`. The agent's turn score folds everything together: `turn_score = min(overlap_score, interrupt_count_score, post_interrupt_latency_score)` (each term included only when defined).
 
 **User-interrupt turns** (either user-only or dual)
@@ -147,7 +166,7 @@ The remaining fields depend on which signal fired:
 | Field | Description |
 |---|---|
 | `per_turn_score` | `{turn_id: float}` — the final 0–1 score per turn. |
-| `per_turn_reason` | `{turn_id: "latency" / "agent_interrupt" / "user_interrupt" / "dual_interrupt"}` — which signal fired. |
+| `per_turn_reason` | `{turn_id: "latency" / "agent_interrupt" / "backchannel" / "late_backchannel" / "user_interrupt" / "dual_interrupt"}` — which signal fired. |
 | `per_turn_evidence` | `{turn_id: {...}}` — see previous section. |
 | `num_turns` | Highest turn_id present in either user or assistant audio timestamps (greeting excluded). |
 | `num_evaluated` | Number of turns actually scored (both timestamp sides present). |
@@ -172,7 +191,9 @@ Emitted as `sub_metrics` on the main `MetricScore`, in this order. The runner ag
 
 | Key | Normalized? | When present | Meaning |
 | --- | --- | --- | --- |
-| `agent_interruption.rate` | yes | always | Fraction of evaluable turns in `assistant_interrupted_turns`. |
+| `agent_backchannel.rate` | yes | always | Fraction of evaluable turns scored as a backchannel. |
+| `agent_late_backchannel.rate` | yes | always | Fraction of evaluable turns scored as a late backchannel. |
+| `agent_interruption.rate` | yes | always | Fraction of evaluable turns in `assistant_interrupted_turns`, excluding backchannel and late-backchannel turns. |
 | `agent_interruption.num_interruptions` | no (raw count) | always, but `score=None` when rate = 0 | Total distinct barge-in segments summed across all agent-interrupt turns. `None` on clean runs so cross-record aggregates exclude them rather than averaging in zeros. |
 | `agent_interruption.mean_overlap_ms` | no | rate > 0 | Arithmetic mean of `overlap_ms` across agent-interrupt turns. |
 | `agent_interruption.mean_overlap_score` | yes | rate > 0 | Mean of the per-turn overlap scores (in `[0, AGENT_INTERRUPT_MAX_SCORE]`). |
