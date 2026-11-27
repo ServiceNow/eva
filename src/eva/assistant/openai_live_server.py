@@ -9,16 +9,15 @@ delegates, a backend Responses model picks tools, and tool calls are executed
 locally through the shared ToolExecutor.
 """
 
-import array
 import asyncio
 import base64
 import json
-import math
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
+import numpy as np
 import uvicorn
 import yaml
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -296,11 +295,10 @@ class LiveInputMeter:
 
 
 def _rms(pcm: bytes) -> float:
-    samples = array.array("h")
-    samples.frombytes(pcm[: len(pcm) - (len(pcm) % 2)])
-    if not samples:
+    samples = np.frombuffer(pcm[: len(pcm) - (len(pcm) % 2)], dtype="<i2")
+    if not samples.size:
         return 0.0
-    return math.sqrt(sum(s * s for s in samples) / len(samples))
+    return float(np.sqrt(np.mean(samples.astype(np.float64) ** 2)))
 
 
 class TurnTracker:
@@ -389,9 +387,9 @@ class TurnTracker:
             events += self._flush_assistant(interrupted=False)
         return events
 
-    def on_audio_chunk(self, pcm: bytes, now_ms: int) -> float | None:
+    def on_audio_chunk(self, loud: bool, now_ms: int) -> float | None:
         """Return response latency in seconds the first time loud audio follows a user speech stop."""
-        if _rms(pcm) < LOUD_RMS_THRESHOLD:
+        if not loud:
             return None
         self._asst_open = True
         if self._asst_first_audio_ms is None:
@@ -910,7 +908,8 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
             self._logged_first_audio = True
             logger.info(f"First assistant audio chunk received ({len(pcm16_bytes)} bytes)")
 
-        latency_s = self._tracker.on_audio_chunk(pcm16_bytes, _now_ms())
+        loud = _rms(pcm16_bytes) >= LOUD_RMS_THRESHOLD
+        latency_s = self._tracker.on_audio_chunk(loud, _now_ms())
         if latency_s is not None and self._metrics_log:
             self._metrics_log.write_latency("model_response", latency_s, self._model)
 
@@ -921,7 +920,7 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
             sync_buffer_to_position(self.user_audio_buffer, len(self.assistant_audio_buffer))
         self.assistant_audio_buffer.extend(pcm16_bytes)
 
-        to_send = self._gate_output(pcm16_bytes)
+        to_send = self._gate_output(pcm16_bytes, loud)
         if not to_send:
             return
 
@@ -932,13 +931,13 @@ class OpenAILiveAssistantServer(AbstractAssistantServer):
         except Exception as e:
             logger.error(f"Error converting audio for output queue: {e}")
 
-    def _gate_output(self, pcm: bytes) -> bytes:
+    def _gate_output(self, pcm: bytes, loud: bool) -> bytes:
         """Return the part of this chunk to forward: all of a loud chunk, or quiet audio within the hold after one.
 
         Every loud chunk resets the allowance to FORWARD_SILENCE_HOLD_MS of quiet audio; quiet audio beyond it, and
         quiet audio before any speech, is not forwarded.
         """
-        if _rms(pcm) >= LOUD_RMS_THRESHOLD:
+        if loud:
             self._quiet_bytes_left = _FORWARD_SILENCE_HOLD_BYTES
             return pcm
         out = pcm[: self._quiet_bytes_left]

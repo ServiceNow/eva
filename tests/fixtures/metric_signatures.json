@@ -7,7 +7,7 @@
   },
   "ConcisenessJudgeMetric": {
     "name": "conciseness",
-    "prompt_hash": "9a7a4307ce0f",
+    "prompt_hash": "a77bed85d2d7",
     "source_hash": "89f5acbc86da",
     "version": "v0.3"
   },
@@ -19,7 +19,7 @@
   },
   "ConversationProgressionJudgeMetric": {
     "name": "conversation_progression",
-    "prompt_hash": "40de8b032c08",
+    "prompt_hash": "9604668bb188",
     "source_hash": "fb656a937c9c",
     "version": "v0.4"
   },

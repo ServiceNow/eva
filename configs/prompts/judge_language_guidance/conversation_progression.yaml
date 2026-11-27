@@ -1,7 +1,44 @@
 # Per-language guidance for the conversation_progression judge, rendered into its language_guidance slot.
 # Based on native-speaker review of EVA runs. See src/eva/metrics/language_guidance.py.
-# Covers homophone disambiguation before tool calls. Each group heading states what its items
-# mean for the rating.
+# Covers homophone disambiguation before tool calls, and backchannels that are not redundant_statements.
+# Each group heading states what its items mean for the rating.
+
+fr: |
+  **Backchannels: not redundant_statements, does not lower the rating:**
+  - Repeating short backchannels such as "Oui", "D'accord", "Hm-hm", "Je vois", "Ah bon", "OK" across turns. Québec French also uses "OK parfait" and "C'est beau". They carry no information.
+
+de: |
+  **Backchannels: not redundant_statements, does not lower the rating:**
+  - Repeating short backchannels such as "Ja", "Mhm", "Genau", "Okay", "Alles klar", "Ach so" across turns. "Genau" is a common backchannel and does not by itself mean agreement. They carry no information.
+
+es: |
+  **Backchannels: not redundant_statements, does not lower the rating:**
+  - Repeating short backchannels such as "Sí", "Vale", "Ajá", "Claro", "Ya", "Entiendo" across turns. They carry no information.
+
+it: |
+  **Backchannels: not redundant_statements, does not lower the rating:**
+  - Repeating short backchannels such as "Sì", "Certo", "Ok", "Ecco", "Capisco", "Ah" across turns. They carry no information.
+
+nl: |
+  **Backchannels: not redundant_statements, does not lower the rating:**
+  - Repeating short backchannels such as "Ja", "Oké", "Hm-hm", "Precies", "Klopt", "Ah zo" across turns. They carry no information.
+
+hi: |
+  **Backchannels: not redundant_statements, does not lower the rating:**
+  - Repeating short backchannels such as हाँ, जी, जी हाँ, अच्छा, हम्म, ठीक है across turns. जी on its own is a polite backchannel. They carry no information.
+
+ko: |
+  Some spoken values are homophones in Korean codes: the letter E (이) and the digit 2 (이), the letter O (오) and the digit 5 (오). The words alone cannot tell the assistant which one the user meant.
+
+  **Flag once under question_quality ("Failing to ask for clarification when the user's request was genuinely ambiguous"):**
+  - A code contains such an element, a lookup failed or the user corrected the value, and the assistant kept calling tools with guessed interpretations or looped over several turns instead of asking which was meant (e.g. 「영어 이인가요, 숫자 이인가요?」).
+
+  **Not a flag, does not lower the rating:**
+  - Not asking when the first lookup succeeded and nothing signals ambiguity.
+  - Asking such a disambiguation question, or asking again after a failed lookup: this is never redundant_statements or information_loss, even though the user already said the value, because the spoken value did not determine the letter or digit.
+
+  **Backchannels: not redundant_statements, does not lower the rating:**
+  - Repeating short backchannels such as 네, 예, 아 네, 그렇군요, 음 across turns. 네 often means "I am listening", not "yes". They carry no information.
 
 ja: |
   Some spoken values are homophones in Japanese: きゅう is both the digit 9 and the letter Q (キュー), and the same name reading can be written with different kanji (隼人 / 隼斗, 斉藤 / 斎藤). The words alone cannot tell the assistant which one the user meant.
@@ -13,12 +50,5 @@ ja: |
   - Not asking when the first lookup succeeded and nothing signals ambiguity.
   - Asking such a disambiguation question, or asking again after a failed lookup: this is never redundant_statements or information_loss, even though the user already said the value, because the spoken value did not determine the letter, digit or kanji.
 
-ko: |
-  Some spoken values are homophones in Korean codes: the letter E (이) and the digit 2 (이), the letter O (오) and the digit 5 (오). The words alone cannot tell the assistant which one the user meant.
-
-  **Flag once under question_quality ("Failing to ask for clarification when the user's request was genuinely ambiguous"):**
-  - A code contains such an element, a lookup failed or the user corrected the value, and the assistant kept calling tools with guessed interpretations or looped over several turns instead of asking which was meant (e.g. 「영어 이인가요, 숫자 이인가요?」).
-
-  **Not a flag, does not lower the rating:**
-  - Not asking when the first lookup succeeded and nothing signals ambiguity.
-  - Asking such a disambiguation question, or asking again after a failed lookup: this is never redundant_statements or information_loss, even though the user already said the value, because the spoken value did not determine the letter or digit.
+  **Backchannels: not redundant_statements, does not lower the rating:**
+  - Repeating short backchannels such as はい, ええ, そうですね, なるほど, 左様でございますか across turns. Aizuchi are expected much more often than English backchannels, and はい often means "I am listening", not "yes". They carry no information.

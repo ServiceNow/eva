@@ -253,7 +253,7 @@ class TestTurnTracker:
 
     def test_interruption_before_any_transcript_still_records_the_turn(self):
         t = TurnTracker()
-        t.on_audio_chunk(LOUD, 1000)
+        t.on_audio_chunk(True, 1000)
         assert t.on_user_speech_start(1100) == []
         assert t.on_output_transcript("Sure thing", 1500) == []
         assert t.tick(1100 + INTERRUPT_TAIL_MS) == [
@@ -271,14 +271,14 @@ class TestTurnTracker:
 
     def test_interrupting_audio_only_response_logs_nothing(self):
         t = TurnTracker()
-        t.on_audio_chunk(LOUD, 1000)
+        t.on_audio_chunk(True, 1000)
         assert t.on_user_speech_start(1100) == []
         assert t.tick(1100 + INTERRUPT_TAIL_MS) == []
         assert t.finalize(5000) == []
 
     def test_assistant_timestamp_prefers_first_loud_audio(self):
         t = TurnTracker()
-        t.on_audio_chunk(LOUD, 900)
+        t.on_audio_chunk(True, 900)
         t.on_output_transcript("Hi.", 1700)
         assert t.finalize(5000) == [TurnEvent("assistant", "Hi.", "900")]
 
@@ -286,23 +286,23 @@ class TestTurnTracker:
         t = TurnTracker()
         t.on_user_speech_start(1000)
         t.on_user_speech_stop(2000)
-        assert t.on_audio_chunk(QUIET, 2100) is None
-        assert t.on_audio_chunk(LOUD, 2800) == pytest.approx(0.8)
-        assert t.on_audio_chunk(LOUD, 2900) is None
+        assert t.on_audio_chunk(False, 2100) is None
+        assert t.on_audio_chunk(True, 2800) == pytest.approx(0.8)
+        assert t.on_audio_chunk(True, 2900) is None
 
     def test_no_latency_without_user_speech_stop(self):
         t = TurnTracker()
-        assert t.on_audio_chunk(LOUD, 100) is None
+        assert t.on_audio_chunk(True, 100) is None
 
     def test_latency_over_thirty_seconds_is_dropped(self):
         t = TurnTracker()
         t.on_user_speech_stop(1000)
-        assert t.on_audio_chunk(LOUD, 40_000) is None
+        assert t.on_audio_chunk(True, 40_000) is None
 
     def test_silent_session_produces_nothing(self):
         t = TurnTracker()
         for now in range(0, 10_000, 100):
-            assert t.on_audio_chunk(QUIET, now) is None
+            assert t.on_audio_chunk(False, now) is None
             assert t.tick(now) == []
         assert not t.assistant_speaking(10_000)
         assert t.finalize(10_000) == []
